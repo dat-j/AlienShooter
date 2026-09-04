@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://src/player/mech_controller.gd" id="1_mech"]
 [ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="2_hurtbox"]
@@ -9,6 +9,9 @@
 [ext_resource type="Script" path="res://src/player/armor_component.gd" id="7_armor"]
 [ext_resource type="Script" path="res://src/player/boost_component.gd" id="8_boost"]
 [ext_resource type="Script" path="res://src/combat/status_component.gd" id="9_status"]
+[ext_resource type="Script" path="res://src/player/weapon_mount.gd" id="10_mount"]
+[ext_resource type="Resource" path="res://data/weapons/wpn_mk2_autocannon.tres" id="11_wpn_l"]
+[ext_resource type="Resource" path="res://data/weapons/wpn_twin_repeater.tres" id="12_wpn_r"]
 
 [sub_resource type="CapsuleShape3D" id="BodyShape"]
 radius = 0.9
@@ -67,6 +70,8 @@ material_override = SubResource("TorsoMaterial")
 
 [node name="WeaponMountLeft" type="Node3D" parent="TorsoPivot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.15, 0, -0.2)
+script = ExtResource("10_mount")
+weapon_data = ExtResource("11_wpn_l")
 
 [node name="MuzzleModel" type="MeshInstance3D" parent="TorsoPivot/WeaponMountLeft"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.6)
@@ -75,6 +80,8 @@ material_override = SubResource("TorsoMaterial")
 
 [node name="WeaponMountRight" type="Node3D" parent="TorsoPivot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0, -0.2)
+script = ExtResource("10_mount")
+weapon_data = ExtResource("12_wpn_r")
 
 [node name="MuzzleModel" type="MeshInstance3D" parent="TorsoPivot/WeaponMountRight"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.6)

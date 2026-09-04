@@ -100,3 +100,39 @@ func test_khong_instantiate_them_sau_lan_cap_phat_dau_qua_1000_chu_ky() -> void:
 
     assert_eq(PoolManager._instantiate_count, count_after_warm_up, "không được có instantiate() nào thêm sau lần cấp phát đầu, qua 1000 chu kỳ acquire/release")
     PoolManager.clear_pool(scene)
+
+
+## --- T-501: pool cho DamageInfo -----------------------------------------
+
+func test_damage_info_lay_ra_luon_o_trang_thai_sach() -> void:
+    var info: DamageInfo = PoolManager.get_damage_info()
+    info.amount = 42.0
+    info.is_critical = true
+    info.status_to_apply.append(&"eff_burning")
+    PoolManager.release_damage_info(info)
+    var reused: DamageInfo = PoolManager.get_damage_info()
+    assert_eq(reused.amount, 0.0, "DamageInfo lấy ra phải được reset")
+    assert_false(reused.is_critical)
+    assert_eq(reused.status_to_apply.size(), 0)
+    PoolManager.release_damage_info(reused)
+
+
+func test_damage_info_khong_cap_phat_them_qua_10000_chu_ky() -> void:
+    PoolManager.prewarm_damage_info(4)
+    var created_after_warm_up: int = (PoolManager.get_damage_info_stats() as Dictionary)["total"]
+    for _i: int in range(10000):
+        var info: DamageInfo = PoolManager.get_damage_info()
+        info.amount = 1.0
+        PoolManager.release_damage_info(info)
+    var stats: Dictionary = PoolManager.get_damage_info_stats()
+    assert_eq(stats["total"], created_after_warm_up, "không được tạo DamageInfo mới khi pool còn hàng")
+    assert_eq(stats["in_use"], 0, "trả hết thì không còn cái nào đang dùng")
+
+
+func test_damage_info_dem_dung_so_dang_dung() -> void:
+    var a: DamageInfo = PoolManager.get_damage_info()
+    var b: DamageInfo = PoolManager.get_damage_info()
+    assert_eq((PoolManager.get_damage_info_stats() as Dictionary)["in_use"], 2)
+    PoolManager.release_damage_info(a)
+    PoolManager.release_damage_info(b)
+    assert_eq((PoolManager.get_damage_info_stats() as Dictionary)["in_use"], 0)

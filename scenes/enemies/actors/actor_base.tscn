@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://src/ai/actor_enemy.gd" id="1_actor"]
 [ext_resource type="Script" path="res://src/ai/ai_state_machine.gd" id="2_machine"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://src/ai/states/ranged_attack_state.gd" id="10_ranged"]
 [ext_resource type="Script" path="res://src/ai/states/stagger_state.gd" id="6_stagger"]
 [ext_resource type="Script" path="res://src/ai/states/death_state.gd" id="7_death"]
+[ext_resource type="Script" path="res://src/combat/status_component.gd" id="11_status"]
 [ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="8_hurtbox"]
 [ext_resource type="Script" path="res://src/combat/hitbox.gd" id="9_hitbox"]
 
@@ -95,6 +96,7 @@ script = ExtResource("7_death")
 [node name="HealthComponent" type="Node" parent="."]
 
 [node name="StatusComponent" type="Node" parent="."]
+script = ExtResource("11_status")
 
 [node name="Hurtbox" type="Area3D" parent="."]
 script = ExtResource("8_hurtbox")

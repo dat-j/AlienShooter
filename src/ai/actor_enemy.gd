@@ -48,10 +48,22 @@ func set_context(new_flow_field: FlowField, new_target: Node3D) -> void:
     target = new_target
 
 
+## Lối vào sát thương cũ (Hurtbox gọi). Việc trừ máu do DamageResolver làm —
+## xem docs/02-TDD.md §8.2, đây không phải nơi trừ máu.
 func take_damage(amount: float) -> void:
     if not _active or amount <= 0.0 or enemy_data == null:
         return
-    current_health = maxf(0.0, current_health - amount)
+    var info: DamageInfo = PoolManager.get_damage_info()
+    info.amount = amount
+    info.source_position = global_position
+    DamageResolver.resolve(info, self)
+    PoolManager.release_damage_info(info)
+
+
+## DamageResolver gọi sau khi đã đổi current_health.
+func notify_health_changed() -> void:
+    if enemy_data == null:
+        return
     health_changed.emit(current_health, enemy_data.max_hp)
     if current_health <= 0.0:
         died.emit(self)
