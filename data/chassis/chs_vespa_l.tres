@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ChassisData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/chassis_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chs_vespa_l"
+display_name_key = "chassis.chs_vespa_l.name"
+unlock_chapter = 1
+module_slots = 2
+core_hp = 80.0
+armor_front = 45.0
+armor_side = 38.0
+armor_rear = 30.0
+move_speed = 7.6
+leg_turn_speed_degrees = 620.0
+heat_capacity = 85.0
+heat_dissipation = 15.0
+boost_charges = 3
+boost_recharge_seconds = 2.8
+boost_skips_iframe_cooldown = true
+loot_radius_bonus_percent = 0.0
+knockback_immune = false
+explosive_damage_taken_multiplier = 1.0

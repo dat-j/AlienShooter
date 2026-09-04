@@ -39,6 +39,27 @@ static func build_text(mech: MechController, delta: float) -> String:
         "than/chan %6.1f / %6.1f do" % [
             rad_to_deg(mech.torso_pivot.rotation.y), rad_to_deg(mech.legs_pivot.rotation.y)
         ],
+        "nhiet     %5.1f %s" % [mech.heat_component.get_heat(), _heat_flag(mech.heat_component)],
+        "boost     %d nap%s" % [
+            mech.boost_component.get_charges(),
+            "  (dang luot)" if mech.boost_component.is_dashing() else ""
+        ],
+        "giap      T %3.0f  P %3.0f  S %3.0f  Tr %3.0f" % [
+            mech.armor_component.get_plate(ArmorComponent.Zone.FRONT),
+            mech.armor_component.get_plate(ArmorComponent.Zone.RIGHT),
+            mech.armor_component.get_plate(ArmorComponent.Zone.REAR),
+            mech.armor_component.get_plate(ArmorComponent.Zone.LEFT),
+        ],
         "frame     %5.2f ms (%d fps)" % [delta * 1000.0, Engine.get_frames_per_second()],
         "cham dat  %s" % ("co" if mech.is_on_floor() else "khong"),
     ])
+
+
+static func _heat_flag(heat: HeatComponent) -> String:
+    if heat.is_overheated():
+        return "QUA NHIET"
+    if heat.is_venting():
+        return "dang xa %.0f%%" % (heat.get_vent_progress() * 100.0)
+    if heat.get_vent_cooldown_remaining() > 0.0:
+        return "xa hoi %.1fs" % heat.get_vent_cooldown_remaining()
+    return ""
