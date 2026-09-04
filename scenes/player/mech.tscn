@@ -1,0 +1,117 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://src/player/mech_controller.gd" id="1_mech"]
+[ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="2_hurtbox"]
+[ext_resource type="Resource" path="res://data/chassis/chs_ronin_m.tres" id="3_chassis"]
+[ext_resource type="Script" path="res://src/player/camera_rig.gd" id="4_rig"]
+[ext_resource type="Script" path="res://src/player/aim_controller.gd" id="5_aim"]
+
+[sub_resource type="CapsuleShape3D" id="BodyShape"]
+radius = 0.9
+height = 3.0
+
+[sub_resource type="BoxMesh" id="LegsMesh"]
+size = Vector3(1.6, 1.4, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="LegsMaterial"]
+albedo_color = Color(0.28, 0.31, 0.36, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="TorsoMesh"]
+size = Vector3(2.0, 1.2, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="TorsoMaterial"]
+albedo_color = Color(0.42, 0.46, 0.52, 1)
+metallic = 0.35
+roughness = 0.55
+
+[sub_resource type="BoxMesh" id="MuzzleMesh"]
+size = Vector3(0.25, 0.25, 1.2)
+
+[sub_resource type="CapsuleShape3D" id="HurtShape"]
+radius = 1.0
+height = 3.1
+
+[sub_resource type="SphereShape3D" id="PickupShape"]
+radius = 4.0
+
+[node name="Mech" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 5
+floor_constant_speed = true
+floor_snap_length = 0.5
+script = ExtResource("1_mech")
+chassis_data = ExtResource("3_chassis")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("BodyShape")
+
+[node name="LegsPivot" type="Node3D" parent="."]
+
+[node name="LegsModel" type="MeshInstance3D" parent="LegsPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+mesh = SubResource("LegsMesh")
+material_override = SubResource("LegsMaterial")
+
+[node name="TorsoPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.05, 0)
+
+[node name="TorsoModel" type="MeshInstance3D" parent="TorsoPivot"]
+mesh = SubResource("TorsoMesh")
+material_override = SubResource("TorsoMaterial")
+
+[node name="WeaponMountLeft" type="Node3D" parent="TorsoPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.15, 0, -0.2)
+
+[node name="MuzzleModel" type="MeshInstance3D" parent="TorsoPivot/WeaponMountLeft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.6)
+mesh = SubResource("MuzzleMesh")
+material_override = SubResource("TorsoMaterial")
+
+[node name="WeaponMountRight" type="Node3D" parent="TorsoPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 0, -0.2)
+
+[node name="MuzzleModel" type="MeshInstance3D" parent="TorsoPivot/WeaponMountRight"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.6)
+mesh = SubResource("MuzzleMesh")
+material_override = SubResource("TorsoMaterial")
+
+[node name="HeatComponent" type="Node" parent="."]
+
+[node name="ArmorComponent" type="Node" parent="."]
+
+[node name="BoostComponent" type="Node" parent="."]
+
+[node name="ModuleComponent" type="Node" parent="."]
+
+[node name="StatusComponent" type="Node" parent="."]
+
+[node name="Hurtbox" type="Area3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("2_hurtbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("HurtShape")
+
+[node name="PickupRadius" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PickupRadius"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("PickupShape")
+
+[node name="AimController" type="Node" parent="."]
+script = ExtResource("5_aim")
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_rig")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+current = true
+transform = Transform3D(1, 0, 0, 0, 0.469472, -0.882948, 0, 0.882948, 0.469472, 0, 19.4248, 10.3284)
+fov = 38.0
