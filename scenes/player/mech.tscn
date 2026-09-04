@@ -1,8 +1,10 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://src/player/mech_controller.gd" id="1_mech"]
 [ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="2_hurtbox"]
 [ext_resource type="Resource" path="res://data/chassis/chs_ronin_m.tres" id="3_chassis"]
+[ext_resource type="Script" path="res://src/player/camera_rig.gd" id="4_rig"]
+[ext_resource type="Script" path="res://src/player/aim_controller.gd" id="5_aim"]
 
 [sub_resource type="CapsuleShape3D" id="BodyShape"]
 radius = 0.9
@@ -103,7 +105,11 @@ collision_mask = 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
 shape = SubResource("PickupShape")
 
+[node name="AimController" type="Node" parent="."]
+script = ExtResource("5_aim")
+
 [node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_rig")
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
 transform = Transform3D(1, 0, 0, 0, 0.469472, -0.882948, 0, 0.882948, 0.469472, 0, 19.4248, 10.3284)
