@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://src/player/mech_controller.gd" id="1_mech"]
 [ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="2_hurtbox"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://src/player/heat_component.gd" id="6_heat"]
 [ext_resource type="Script" path="res://src/player/armor_component.gd" id="7_armor"]
 [ext_resource type="Script" path="res://src/player/boost_component.gd" id="8_boost"]
+[ext_resource type="Script" path="res://src/combat/status_component.gd" id="9_status"]
 
 [sub_resource type="CapsuleShape3D" id="BodyShape"]
 radius = 0.9
@@ -92,6 +93,7 @@ script = ExtResource("8_boost")
 [node name="ModuleComponent" type="Node" parent="."]
 
 [node name="StatusComponent" type="Node" parent="."]
+script = ExtResource("9_status")
 
 [node name="Hurtbox" type="Area3D" parent="."]
 collision_layer = 8

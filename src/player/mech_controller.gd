@@ -33,6 +33,7 @@ var _gravity: float = 24.0
 @onready var heat_component: HeatComponent = $HeatComponent
 @onready var armor_component: ArmorComponent = $ArmorComponent
 @onready var boost_component: BoostComponent = $BoostComponent
+@onready var status_component: StatusComponent = $StatusComponent
 
 
 func _ready() -> void:
@@ -100,6 +101,8 @@ func apply_movement(input: Vector2, delta: float) -> void:
     var speed: float = chassis_data.move_speed
     if heat_component != null:
         speed *= heat_component.get_move_speed_multiplier()
+    if status_component != null:
+        speed *= status_component.get_move_speed_multiplier()
     var desired: Vector3 = compute_desired_velocity(input, get_camera_yaw(), speed)
     var horizontal := Vector3(velocity.x, 0.0, velocity.z)
     horizontal = horizontal.move_toward(desired, compute_change_rate(chassis_data.move_speed, desired) * delta)
