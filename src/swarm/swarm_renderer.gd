@@ -26,6 +26,7 @@ func configure_type(swarm_type: int, mesh: Mesh, material: Material = null) -> M
         instance.name = "SwarmType%d" % swarm_type
         instance.multimesh = MultiMesh.new()
         instance.multimesh.transform_format = MultiMesh.TRANSFORM_3D
+        instance.multimesh.use_colors = true
         instance.multimesh.instance_count = SwarmManager.MAX_SWARM_UNITS
         instance.multimesh.visible_instance_count = 0
         add_child(instance)
@@ -79,3 +80,17 @@ func get_type_instance(swarm_type: int) -> MultiMeshInstance3D:
 
 func get_configured_type_count() -> int:
     return _instances_by_type.size()
+
+
+## Gán màu biến thể theo id logic. Shader swarm nhân màu này với base_color.
+## Màu được lưu trên MultiMesh nên không tạo material riêng hay draw call mới.
+func set_instance_color(swarm_type: int, instance_index: int, color: Color) -> bool:
+    var instance: MultiMeshInstance3D = get_type_instance(swarm_type)
+    if instance == null or instance_index < 0 or instance_index >= instance.multimesh.instance_count:
+        return false
+    var previous_visible_count: int = instance.multimesh.visible_instance_count
+    instance.multimesh.visible_instance_count = maxi(instance_index + 1, previous_visible_count)
+    instance.multimesh.set_instance_color(instance_index, color)
+    instance.multimesh.visible_instance_count = previous_visible_count
+    return true
+

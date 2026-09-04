@@ -78,3 +78,15 @@ func test_type_khong_co_don_vi_co_visible_count_bang_khong() -> void:
     _renderer.sync_from_manager(_swarm)
 
     assert_eq(instance.multimesh.visible_instance_count, 0, "type rỗng không được tạo draw instance")
+
+
+func test_multimesh_ho_tro_instance_color_cho_shader_variant() -> void:
+    var instance: MultiMeshInstance3D = _renderer.configure_type(0, BoxMesh.new())
+    var tint: Color = Color(0.7, 0.9, 0.5, 1.0)
+
+    _swarm.spawn(Vector3.ZERO, Vector3.ZERO, 10.0, 0)
+    _renderer.sync_from_manager(_swarm)
+    assert_true(instance.multimesh.use_colors, "buffer màu phải được bật trước khi cấp instance")
+    assert_true(_renderer.set_instance_color(0, 0, tint), "phải gán được màu biến thể")
+    assert_false(_renderer.set_instance_color(9, 0, tint), "type chưa cấu hình phải bị từ chối")
+
