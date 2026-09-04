@@ -30,6 +30,12 @@ var _free_ids: PackedInt32Array = PackedInt32Array()
 var _alive_count: int = 0
 var _free_count: int = MAX_SWARM_UNITS
 
+## Scene VFX chết được cấp phát qua PoolManager. Để trống trong test/headless
+## hoặc trước khi content thật được gán.
+var death_vfx_scene: PackedScene
+var _ray_hit_ids: PackedInt32Array = PackedInt32Array()
+var _ray_hit_distances: PackedFloat32Array = PackedFloat32Array()
+
 
 func _init() -> void:
     _positions.resize(MAX_SWARM_UNITS)
@@ -44,6 +50,8 @@ func _init() -> void:
     _index_by_id.fill(-1)
 
     _free_ids.resize(MAX_SWARM_UNITS)
+    _ray_hit_ids.resize(MAX_SWARM_UNITS)
+    _ray_hit_distances.resize(MAX_SWARM_UNITS)
     for id: int in range(MAX_SWARM_UNITS):
         _free_ids[id] = MAX_SWARM_UNITS - 1 - id
 
@@ -108,6 +116,92 @@ func kill(id: int) -> bool:
     _free_count += 1
     _alive_count -= 1
     return true
+
+
+## Gây sát thương vùng trên mặt phẳng XZ. Duyệt mảng liên tục để không phụ
+## thuộc trạng thái đồng bộ của grid; swap-kill ngay tại index hiện tại.
+func damage_at_point(position: Vector3, radius: float, damage: float) -> int:
+    if radius < 0.0 or damage <= 0.0:
+        return 0
+    var radius_sq: float = radius * radius
+    var hit_count: int = 0
+    var index: int = 0
+    while index < _alive_count:
+        var offset: Vector3 = _positions[index] - position
+        var in_range: bool = offset.x * offset.x + offset.z * offset.z <= radius_sq
+        if not in_range:
+            index += 1
+            continue
+        hit_count += 1
+        _healths[index] -= damage
+        if _healths[index] <= 0.0:
+            var dead_position: Vector3 = _positions[index]
+            var dead_id: int = _ids[index]
+            kill(dead_id)
+            _spawn_death_vfx(dead_position)
+        else:
+            index += 1
+    return hit_count
+
+
+## Gây sát thương dọc đoạn thẳng trên XZ. Mỗi đơn vị chỉ trúng một lần;
+## `pierce` là số mục tiêu tối đa theo thứ tự gần `from` nhất. Giá trị âm
+## xuyên toàn bộ mục tiêu. Bán kính va chạm mặc định đủ cho mesh swarm nhỏ.
+func damage_along_ray(
+    from: Vector3,
+    to: Vector3,
+    damage: float,
+    pierce: int,
+    hit_radius: float = 0.5
+) -> int:
+    if damage <= 0.0 or pierce == 0 or hit_radius < 0.0:
+        return 0
+    var segment: Vector3 = to - from
+    segment.y = 0.0
+    var length_sq: float = segment.length_squared()
+    if length_sq <= 0.000001:
+        return damage_at_point(from, hit_radius, damage)
+    var candidate_count: int = 0
+    var radius_sq: float = hit_radius * hit_radius
+    for index: int in range(_alive_count):
+        var offset: Vector3 = _positions[index] - from
+        offset.y = 0.0
+        var t: float = clampf(offset.dot(segment) / length_sq, 0.0, 1.0)
+        var closest: Vector3 = from + segment * t
+        var distance: Vector3 = _positions[index] - closest
+        distance.y = 0.0
+        if distance.length_squared() <= radius_sq:
+            var insert_at: int = candidate_count
+            while insert_at > 0 and _ray_hit_distances[insert_at - 1] > t:
+                _ray_hit_distances[insert_at] = _ray_hit_distances[insert_at - 1]
+                _ray_hit_ids[insert_at] = _ray_hit_ids[insert_at - 1]
+                insert_at -= 1
+            _ray_hit_distances[insert_at] = t
+            _ray_hit_ids[insert_at] = _ids[index]
+            candidate_count += 1
+    var limit: int = candidate_count if pierce < 0 else mini(candidate_count, pierce)
+    var hit_count: int = 0
+    for result_index: int in range(limit):
+        var id: int = _ray_hit_ids[result_index]
+        var index: int = _index_by_id[id]
+        if index < 0:
+            continue
+        _healths[index] -= damage
+        hit_count += 1
+        if _healths[index] <= 0.0:
+            var dead_position: Vector3 = _positions[index]
+            kill(id)
+            _spawn_death_vfx(dead_position)
+    return hit_count
+
+
+func _spawn_death_vfx(position: Vector3) -> void:
+    if death_vfx_scene == null or not is_inside_tree():
+        return
+    var vfx: Node = PoolManager.acquire(death_vfx_scene)
+    if vfx is Node3D:
+        (vfx as Node3D).global_position = position
+    add_child(vfx)
 
 
 ## Số đơn vị swarm đang sống. Không duyệt mảng.
