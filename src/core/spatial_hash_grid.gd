@@ -116,12 +116,19 @@ func query_radius(centre: Vector3, radius: float, out: PackedInt32Array) -> int:
     var min_cz: int = floori((centre.z - radius) * _inv_cell_size)
     var max_cz: int = floori((centre.z + radius) * _inv_cell_size)
     for cz: int in range(min_cz, max_cz + 1):
+        # Khoá ô được ghép tay ngay tại đây (không gọi _key_from_cell())
+        # để tránh chi phí gọi hàm GDScript lặp lại tới 36 lần/truy vấn
+        # với bán kính lớn — đo thực tế trên Godot 4.7.2 cho thấy đây là
+        # một phần chi phí đáng kể so với ngân sách 0.5ms (T-301).
+        var uz: int = cz + _CELL_KEY_BIAS
         for cx: int in range(min_cx, max_cx + 1):
-            var key: int = _key_from_cell(cx, cz)
-            if not _cells.has(key):
+            var ux: int = cx + _CELL_KEY_BIAS
+            var key: int = (ux << _CELL_KEY_BITS) | uz
+            if not (key in _cells):
                 continue
             var bucket: PackedInt32Array = _cells[key]
-            for i: int in range(bucket.size()):
+            var bucket_size: int = bucket.size()
+            for i: int in range(bucket_size):
                 var id: int = bucket[i]
                 var pos: Vector3 = _positions[id]
                 var dx: float = pos.x - centre.x
@@ -146,9 +153,7 @@ func query_cell_neighbours(position: Vector3, out: PackedInt32Array) -> int:
     for dz: int in range(-1, 2):
         for dx: int in range(-1, 2):
             var key: int = _key_from_cell(cx + dx, cz + dz)
-            if not _cells.has(key):
-                continue
-            var bucket: PackedInt32Array = _cells[key]
+            var bucket: PackedInt32Array = _cells.get(key, _empty_bucket)
             for i: int in range(bucket.size()):
                 if count < out_capacity:
                     out[count] = bucket[i]
