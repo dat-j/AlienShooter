@@ -8,10 +8,12 @@ extends Label
 const UPDATE_INTERVAL: float = 0.1
 
 @export var mech_path: NodePath
+@export var swarm_path: NodePath = NodePath("../../SwarmRuntime")
 
 var _elapsed: float = 0.0
 
 @onready var _mech: MechController = get_node_or_null(mech_path) as MechController
+@onready var _swarm: SwarmRuntime = get_node_or_null(swarm_path) as SwarmRuntime
 
 
 func _process(delta: float) -> void:
@@ -20,6 +22,9 @@ func _process(delta: float) -> void:
         return
     _elapsed = 0.0
     text = build_text(_mech, delta)
+    if _swarm != null:
+        text += "
+swarm     %d con" % _swarm.get_alive_count()
 
 
 ## Hàm thuần tuý để test được: dựng chuỗi từ trạng thái mech.
