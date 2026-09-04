@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="StatusEffectData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/status_effect_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eff_burning"
+display_name_key = "status.eff_burning.name"
+duration_seconds = 4.0
+max_stacks = 3
+damage_per_second = 12.0
+damage_type = 3
+move_speed_multiplier = 1.0
+armor_effectiveness_multiplier = 1.0
+damage_taken_multiplier = 1.0
+prevents_attack = false
+breaks_on_single_hit_damage = 0.0
+grants_stealth = false
+tint_color = Color(1, 0.4, 0.1, 1)

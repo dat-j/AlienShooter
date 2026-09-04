@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/enemy_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"enm_crawler"
+display_name_key = "enemy.enm_crawler.name"
+chapter = 1
+execution_path = 0
+max_hp = 18.0
+move_speed = 7.5
+contact_damage = 6.0
+contact_damage_type = 0
+spawn_budget_cost = 1
+perception_radius = 12.0
+stagger_threshold = 999999.0
+stagger_immunity_seconds = 0.0
+attack_range = 1.5
+attack_windup_seconds = 0.1
+attack_active_seconds = 0.1
+attack_recovery_seconds = 0.3
+attack_cooldown_seconds = 0.8

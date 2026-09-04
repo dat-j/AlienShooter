@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="LootTable" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/loot_table.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"loot_ch1_standard"
+item_ids = Array[StringName]([&"item_salvage_small", &"item_nanite_patch", &"item_coolant_cell", &"item_ammo_crate", &"item_alloy_crate", &"item_overdrive_chip"])
+weights = Array[float]([10.0, 3.0, 3.0, 3.0, 1.0, 0.2])
+min_amount = Array[int]([5, 1, 1, 1, 10, 1])
+max_amount = Array[int]([15, 1, 1, 1, 30, 1])

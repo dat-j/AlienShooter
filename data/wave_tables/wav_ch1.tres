@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WaveTable" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/wave_table.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wav_ch1"
+chapter = 1
+enemy_ids = Array[StringName]([&"enm_crawler", &"enm_skitter", &"enm_husk"])
+costs = Array[int]([1, 1, 2])
+weights = Array[float]([5.0, 3.0, 2.0])
+min_mission_time_seconds = Array[float]([0.0, 0.0, 60.0])
+max_mission_time_seconds = Array[float]([-1.0, -1.0, -1.0])

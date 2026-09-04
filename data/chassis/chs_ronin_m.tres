@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ChassisData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/chassis_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chs_ronin_m"
+display_name_key = "chassis.chs_ronin_m.name"
+unlock_chapter = 2
+module_slots = 2
+core_hp = 100.0
+armor_front = 60.0
+armor_side = 52.0
+armor_rear = 42.0
+move_speed = 6.0
+leg_turn_speed_degrees = 480.0
+heat_capacity = 100.0
+heat_dissipation = 12.0
+boost_charges = 2
+boost_recharge_seconds = 3.5
+boost_skips_iframe_cooldown = false
+loot_radius_bonus_percent = 10.0
+knockback_immune = false
+explosive_damage_taken_multiplier = 1.0

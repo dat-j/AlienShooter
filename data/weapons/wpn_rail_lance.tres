@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wpn_rail_lance"
+display_name_key = "weapon.wpn_rail_lance.name"
+category = 1
+tier = 3
+damage = 120.0
+damage_type = 1
+projectiles_per_shot = 1
+spread_degrees = 0.0
+pierce_count = 999
+aoe_radius = 0.0
+rate_of_fire = 0.6
+heat_per_shot = 35.0
+charge_time = 0.5
+spin_up_time = 0.0
+uses_ammo = false
+max_ammo = 0
+upgrade_costs = Array[Vector2i]([Vector2i(400, 8), Vector2i(900, 20), Vector2i(1800, 45), Vector2i(3500, 90)])
+overdrive_effect = &""

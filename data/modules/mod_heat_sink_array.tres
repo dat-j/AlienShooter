@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ModuleData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/module_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"mod_heat_sink_array"
+display_name_key = "module.mod_heat_sink_array.name"
+module_type = 0
+tier = 1
+cooldown_seconds = 0.0
+active_duration_seconds = 0.0
+uses_per_mission = -1
+effect_key = &"heat_dissipation_mult"
+effect_value_a = 0.25
+effect_value_b = 0.0
+effect_value_c = 0.0

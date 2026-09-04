@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PerkData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/perk_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"prk_tactical_boost_charge"
+display_name_key = "perk.prk_tactical_boost_charge.name"
+description_key = "perk.prk_tactical_boost_charge.desc"
+branch = 0
+tier_index = 0
+point_cost = 1
+required_pilot_level = 1
+prerequisite_perk_id = &""
+effect_key = &"boost_charge_bonus"
+effect_value = 1.0

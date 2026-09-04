@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/mission_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"msn_ch1_purge"
+display_name_key = "mission.msn_ch1_purge.name"
+mission_type = 0
+chapter = 1
+layout_template_id = &"layout_ch1_purge"
+enemy_pool = Array[StringName]([&"enm_crawler", &"enm_skitter", &"enm_husk"])
+wave_table_id = &"wav_ch1"
+loot_table_id = &"loot_ch1_standard"
+target_duration_min_seconds = 360.0
+target_duration_max_seconds = 540.0
+difficulty_budget_multiplier = 1.0
+objective_summary_key = "mission.msn_ch1_purge.objective"
+salvage_reward_min = 350
+salvage_reward_max = 600
+alloy_reward_min = 6
+alloy_reward_max = 12

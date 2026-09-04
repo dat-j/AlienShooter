@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RoomModuleData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/room_module_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"room_ch1_small_01"
+display_name_key = "room.room_ch1_small_01.name"
+chapter = 1
+room_role = 1
+size_class = 0
+connection_count = 2
+connection_sizes = Array[int]([1, 1])
+enemy_density = 1.0
+loot_density = 1.0
+supports_environment_hazard = false
