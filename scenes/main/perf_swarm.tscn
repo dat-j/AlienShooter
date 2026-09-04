@@ -1,0 +1,75 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://tools/perf_report.gd" id="1_perf"]
+[ext_resource type="Script" path="res://src/swarm/swarm_manager.gd" id="2_manager"]
+[ext_resource type="Script" path="res://src/swarm/swarm_renderer.gd" id="3_renderer"]
+
+[sub_resource type="Environment" id="Environment_perf"]
+background_mode = 1
+background_color = Color(0.025, 0.035, 0.05, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.45, 0.55, 0.7, 1)
+ambient_light_energy = 0.65
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(60, 0.2, 60)
+
+[sub_resource type="StandardMaterial3D" id="Material_floor"]
+albedo_color = Color(0.09, 0.12, 0.15, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="Cylinder_target"]
+top_radius = 0.7
+bottom_radius = 0.9
+height = 1.2
+
+[sub_resource type="StandardMaterial3D" id="Material_target"]
+albedo_color = Color(0.95, 0.45, 0.12, 1)
+emission_enabled = true
+emission = Color(0.6, 0.12, 0.02, 1)
+emission_energy_multiplier = 2.0
+
+[node name="PerfSwarm" type="Node3D"]
+script = ExtResource("1_perf")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_perf")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -25, 0)
+shadow_enabled = true
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.1, 0)
+mesh = SubResource("BoxMesh_floor")
+material_override = SubResource("Material_floor")
+
+[node name="Target" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.6, 0)
+mesh = SubResource("Cylinder_target")
+material_override = SubResource("Material_target")
+
+[node name="SwarmManager" type="Node3D" parent="."]
+script = ExtResource("2_manager")
+
+[node name="SwarmRenderer" type="Node3D" parent="."]
+script = ExtResource("3_renderer")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 42, 34)
+rotation_degrees = Vector3(-51, 0, 0)
+current = true
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Metrics" type="Label" parent="HUD"]
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 430.0
+offset_bottom = 230.0
+theme_override_colors/font_color = Color(0.75, 0.95, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "SWARM PERF\nĐang khởi tạo 300 đơn vị..."
