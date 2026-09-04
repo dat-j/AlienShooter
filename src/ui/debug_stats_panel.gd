@@ -39,6 +39,12 @@ static func build_text(mech: MechController, delta: float) -> String:
         "than/chan %6.1f / %6.1f do" % [
             rad_to_deg(mech.torso_pivot.rotation.y), rad_to_deg(mech.legs_pivot.rotation.y)
         ],
+        "core hp   %5.1f / %5.1f" % [
+            mech.core_hp, mech.chassis_data.core_hp if mech.chassis_data != null else 0.0
+        ],
+        "dan       T %d  P %d" % [
+            mech.weapon_mount_left.get_ammo(), mech.weapon_mount_right.get_ammo()
+        ],
         "nhiet     %5.1f %s" % [mech.heat_component.get_heat(), _heat_flag(mech.heat_component)],
         "boost     %d nap%s" % [
             mech.boost_component.get_charges(),
