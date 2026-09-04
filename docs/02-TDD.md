@@ -90,15 +90,22 @@ res://
 
 | # | Tên | Trách nhiệm | Được phép biết về |
 |---|---|---|---|
-| 1 | `Logger` | Ghi log có cấp độ, ghi ra file khi build debug | Không gì |
+| 1 | `Log` | Ghi log có cấp độ, ghi ra file khi build debug | Không gì |
 | 2 | `EventBus` | Trung tâm signal toàn cục. **Chỉ khai báo signal, không có logic** | Không gì |
-| 3 | `SettingsManager` | Đồ hoạ, âm lượng, gán phím; đọc/ghi `user://settings.cfg` | Logger |
-| 4 | `ContentDB` | Nạp và index toàn bộ `.tres` trong `res://data/` lúc khởi động. Tra cứu theo id | Logger |
-| 5 | `SaveManager` | Serialize/deserialize tiến trình, `user://save_*.json` có phiên bản | ContentDB, Logger |
-| 6 | `PoolManager` | Object pool cho projectile, VFX, decal, damage number, actor | Logger |
+| 3 | `SettingsManager` | Đồ hoạ, âm lượng, gán phím; đọc/ghi `user://settings.cfg` | Log |
+| 4 | `ContentDB` | Nạp và index toàn bộ `.tres` trong `res://data/` lúc khởi động. Tra cứu theo id | Log |
+| 5 | `SaveManager` | Serialize/deserialize tiến trình, `user://save_*.json` có phiên bản | ContentDB, Log |
+| 6 | `PoolManager` | Object pool cho projectile, VFX, decal, damage number, actor | Log |
 | 7 | `AudioDirector` | Bus âm thanh, nhạc động, giới hạn số instance mỗi loại SFX | SettingsManager |
 | 8 | `JuiceDirector` | Giật màn hình, hitstop, rung gamepad, hiệu ứng hậu kỳ khi trúng đòn | SettingsManager |
 | 9 | `GameDirector` | Máy trạng thái cấp cao nhất, chuyển cảnh, tải nhiệm vụ | Tất cả những cái trên |
+
+> **Ghi chú sai lệch (2026-09-04, T-005).** Autoload số 1 ban đầu được đặt tên `Logger`.
+> Godot 4.7 đã có sẵn một lớp native tên `Logger` (`ClassDB.class_exists("Logger")` trả về
+> `true`), nên tên native luôn thắng khi phân giải và mọi lệnh `Logger.info(...)` đều hỏng với
+> `Static function "info()" not found in base "GDScriptNativeClass"`. Đã đổi thành **`Log`**.
+> Đã kiểm tra `ClassDB` cho cả 9 tên autoload — chỉ `Logger` bị đụng, 8 tên còn lại giữ nguyên.
+> Khi thêm autoload mới, hãy kiểm tra `ClassDB.class_exists()` trước.
 
 **Luật vàng:** Autoload không bao giờ giữ tham chiếu trực tiếp tới node trong màn chơi. Giao tiếp một chiều qua `EventBus`. Điều này giúp bất kỳ scene nào cũng chạy độc lập được khi test.
 

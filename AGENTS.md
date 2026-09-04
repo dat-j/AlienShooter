@@ -40,7 +40,7 @@ Không cần đọc toàn bộ codebase. Đọc những file mà task của bạ
 - Tạo `.tres` từ số liệu đã có trong GDD
 - Tạo scene giữ chỗ với hình hộp cơ bản
 - Refactor code do chính bạn vừa viết trong task này
-- Thêm log qua `Logger`
+- Thêm log qua `Log`
 
 ## 3. PHẢI hỏi trước khi làm
 

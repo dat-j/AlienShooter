@@ -54,9 +54,10 @@
 **File:** `addons/gut/`, `tests/test_smoke.gd`
 **DoD:** `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit` chạy và trả về mã 0 với một test smoke.
 
-**T-005** · Autoload `Logger`
+**T-005** · Autoload `Log`
 **Dep:** T-003
-**File:** `src/autoload/logger.gd`
+**File:** `src/autoload/log.gd`
+*(đổi tên từ `Logger` — xem ghi chú sai lệch ở `02-TDD.md` §4)*
 **DoD:** Có các cấp `debug/info/warn/error`; ghi ra `user://logs/` trong build debug; có test bao phủ việc lọc theo cấp.
 
 **T-006** · Autoload `EventBus`
