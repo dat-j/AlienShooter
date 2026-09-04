@@ -43,3 +43,35 @@ func test_set_chassis_ignores_null_and_keeps_current() -> void:
     var before: ChassisData = mech.chassis_data
     mech.set_chassis(null)
     assert_same(mech.chassis_data, before, "chassis rỗng không được xoá chỉ số đang dùng")
+
+
+func test_movement_input_is_relative_to_camera_yaw() -> void:
+    var forward: Vector3 = MechController.compute_desired_velocity(Vector2(0.0, -1.0), 0.0, 6.0)
+    assert_almost_eq(forward.z, -6.0, 0.001, "W phải đi về −Z khi camera không xoay")
+    var rotated: Vector3 = MechController.compute_desired_velocity(
+        Vector2(0.0, -1.0), deg_to_rad(90.0), 6.0
+    )
+    assert_almost_eq(rotated.x, -6.0, 0.001, "camera xoay 90° thì W phải đi về −X")
+    assert_almost_eq(rotated.z, 0.0, 0.001)
+
+
+func test_diagonal_input_does_not_exceed_chassis_speed() -> void:
+    var diagonal: Vector3 = MechController.compute_desired_velocity(Vector2(1.0, -1.0), 0.0, 6.0)
+    assert_almost_eq(diagonal.length(), 6.0, 0.001, "đi chéo không được nhanh hơn đi thẳng")
+
+
+func test_acceleration_and_deceleration_times_match_spec() -> void:
+    var accel: float = MechController.compute_change_rate(6.0, Vector3(6.0, 0.0, 0.0))
+    var decel: float = MechController.compute_change_rate(6.0, Vector3.ZERO)
+    assert_almost_eq(accel, 6.0 / 0.18, 0.001, "đạt tốc độ tối đa trong 0.18s")
+    assert_almost_eq(decel, 6.0 / 0.25, 0.001, "dừng hẳn trong 0.25s")
+
+
+func test_apply_movement_builds_speed_over_time_and_stops() -> void:
+    var mech := _make_mech()
+    for _i: int in range(60):
+        mech.apply_movement(Vector2(0.0, -1.0), 1.0 / 60.0)
+    assert_almost_eq(mech.velocity.z, -6.0, 0.01, "giữ W một lúc phải đạt tốc độ tối đa")
+    for _i: int in range(60):
+        mech.apply_movement(Vector2.ZERO, 1.0 / 60.0)
+    assert_almost_eq(Vector2(mech.velocity.x, mech.velocity.z).length(), 0.0, 0.01, "nhả phím phải dừng hẳn")

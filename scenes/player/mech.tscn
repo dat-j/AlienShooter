@@ -36,6 +36,8 @@ radius = 4.0
 [node name="Mech" type="CharacterBody3D"]
 collision_layer = 2
 collision_mask = 5
+floor_constant_speed = true
+floor_snap_length = 0.5
 script = ExtResource("1_mech")
 chassis_data = ExtResource("3_chassis")
 
