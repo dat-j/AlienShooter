@@ -1,0 +1,69 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/ai/actor_enemy.gd" id="1_actor"]
+
+[sub_resource type="CapsuleShape3D" id="BodyShape"]
+radius = 0.65
+height = 2.0
+
+[sub_resource type="CapsuleMesh" id="BodyMesh"]
+radius = 0.65
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="BodyMaterial"]
+albedo_color = Color(0.55, 0.18, 0.12, 1)
+
+[sub_resource type="CapsuleShape3D" id="HurtShape"]
+radius = 0.7
+height = 2.1
+
+[sub_resource type="SphereShape3D" id="HitShape"]
+radius = 1.0
+
+[sub_resource type="Animation" id="ResetAnimation"]
+resource_name = "RESET"
+length = 0.0
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary"]
+_data = {&"RESET": SubResource("ResetAnimation")}
+
+[node name="ActorEnemy" type="CharacterBody3D"]
+script = ExtResource("1_actor")
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BodyShape")
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Model"]
+mesh = SubResource("BodyMesh")
+material_override = SubResource("BodyMaterial")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Model"]
+libraries = {&"": SubResource("AnimationLibrary")}
+
+[node name="AnimationTree" type="AnimationTree" parent="Model"]
+
+[node name="StateMachine" type="Node" parent="."]
+
+[node name="HealthComponent" type="Node" parent="."]
+
+[node name="StatusComponent" type="Node" parent="."]
+
+[node name="Hurtbox" type="Area3D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitorable = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
+shape = SubResource("HurtShape")
+
+[node name="Hitbox" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox"]
+shape = SubResource("HitShape")
