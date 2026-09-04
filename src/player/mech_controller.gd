@@ -30,6 +30,9 @@ var _gravity: float = 24.0
 @onready var pickup_radius: Area3D = $PickupRadius
 @onready var camera_rig: Node3D = $CameraRig
 @onready var aim_controller: AimController = $AimController
+@onready var heat_component: HeatComponent = $HeatComponent
+@onready var armor_component: ArmorComponent = $ArmorComponent
+@onready var boost_component: BoostComponent = $BoostComponent
 
 
 func _ready() -> void:
@@ -41,7 +44,11 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
     _move_input = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+    heat_component.update_vent(Input.is_action_pressed(&"vent_heat"), delta)
+    if Input.is_action_just_pressed(&"boost"):
+        try_boost()
     apply_movement(_move_input, delta)
+    boost_component.update(delta, global_position, not heat_component.is_overheated())
     update_orientation(delta)
 
 
@@ -51,6 +58,9 @@ func set_chassis(data: ChassisData) -> void:
         Log.warn("chassis_data rỗng — mech giữ nguyên chỉ số cũ", "MechController")
         return
     chassis_data = data
+    heat_component.configure(data)
+    armor_component.configure(data)
+    boost_component.configure(data)
     chassis_changed.emit(data)
 
 
@@ -62,16 +72,37 @@ func get_camera_yaw() -> float:
     return camera_rig.global_rotation.y
 
 
+## Lướt theo hướng đang đi; đứng yên thì lướt theo hướng thân trên (GDD §3).
+func try_boost() -> bool:
+    var direction := Vector3(velocity.x, 0.0, velocity.z)
+    if direction.length_squared() < 0.01:
+        direction = -torso_pivot.global_transform.basis.z
+    return try_boost_in_direction(direction)
+
+
+func try_boost_in_direction(direction: Vector3) -> bool:
+    if boost_component == null:
+        return false
+    return boost_component.try_start(direction, heat_component, global_position)
+
+
 func apply_movement(input: Vector2, delta: float) -> void:
     if chassis_data == null or delta <= 0.0:
         return
-    var desired: Vector3 = compute_desired_velocity(
-        input, get_camera_yaw(), chassis_data.move_speed
-    )
+    if boost_component != null and boost_component.is_dashing():
+        # Cú lướt do move_and_slide thực hiện nên tường vẫn chặn được.
+        var dash: Vector3 = boost_component.get_dash_velocity()
+        velocity.x = dash.x
+        velocity.z = dash.z
+        velocity.y = 0.0 if is_on_floor() else velocity.y - _gravity * delta
+        move_and_slide()
+        return
+    var speed: float = chassis_data.move_speed
+    if heat_component != null:
+        speed *= heat_component.get_move_speed_multiplier()
+    var desired: Vector3 = compute_desired_velocity(input, get_camera_yaw(), speed)
     var horizontal := Vector3(velocity.x, 0.0, velocity.z)
-    horizontal = horizontal.move_toward(
-        desired, compute_change_rate(chassis_data.move_speed, desired) * delta
-    )
+    horizontal = horizontal.move_toward(desired, compute_change_rate(chassis_data.move_speed, desired) * delta)
     velocity.x = horizontal.x
     velocity.z = horizontal.z
     if is_on_floor():

@@ -1,10 +1,13 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://src/player/mech_controller.gd" id="1_mech"]
 [ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="2_hurtbox"]
 [ext_resource type="Resource" path="res://data/chassis/chs_ronin_m.tres" id="3_chassis"]
 [ext_resource type="Script" path="res://src/player/camera_rig.gd" id="4_rig"]
 [ext_resource type="Script" path="res://src/player/aim_controller.gd" id="5_aim"]
+[ext_resource type="Script" path="res://src/player/heat_component.gd" id="6_heat"]
+[ext_resource type="Script" path="res://src/player/armor_component.gd" id="7_armor"]
+[ext_resource type="Script" path="res://src/player/boost_component.gd" id="8_boost"]
 
 [sub_resource type="CapsuleShape3D" id="BodyShape"]
 radius = 0.9
@@ -78,10 +81,13 @@ mesh = SubResource("MuzzleMesh")
 material_override = SubResource("TorsoMaterial")
 
 [node name="HeatComponent" type="Node" parent="."]
+script = ExtResource("6_heat")
 
 [node name="ArmorComponent" type="Node" parent="."]
+script = ExtResource("7_armor")
 
 [node name="BoostComponent" type="Node" parent="."]
+script = ExtResource("8_boost")
 
 [node name="ModuleComponent" type="Node" parent="."]
 
