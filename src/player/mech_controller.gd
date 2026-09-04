@@ -8,6 +8,8 @@ extends CharacterBody3D
 ## (docs/05-BACKLOG.md T-102), tốc độ tối đa đọc từ `ChassisData`.
 
 signal chassis_changed(data: ChassisData)
+signal core_health_changed(current: float, maximum: float)
+signal died()
 
 const DEFAULT_CHASSIS_PATH: String = "res://data/chassis/chs_ronin_m.tres"
 const ACCELERATION_TIME: float = 0.18
@@ -19,13 +21,16 @@ const MIN_MOVE_SPEED_FOR_TURN: float = 0.1
 
 @export var chassis_data: ChassisData
 
+## Máu lõi. CHỈ DamageResolver được phép trừ giá trị này (TDD §8.2).
+var core_hp: float = 1.0
+
 var _move_input: Vector2 = Vector2.ZERO
 var _gravity: float = 24.0
 
 @onready var legs_pivot: Node3D = $LegsPivot
 @onready var torso_pivot: Node3D = $TorsoPivot
-@onready var weapon_mount_left: Node3D = $TorsoPivot/WeaponMountLeft
-@onready var weapon_mount_right: Node3D = $TorsoPivot/WeaponMountRight
+@onready var weapon_mount_left: WeaponMount = $TorsoPivot/WeaponMountLeft
+@onready var weapon_mount_right: WeaponMount = $TorsoPivot/WeaponMountRight
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var pickup_radius: Area3D = $PickupRadius
 @onready var camera_rig: Node3D = $CameraRig
@@ -51,6 +56,7 @@ func _physics_process(delta: float) -> void:
     apply_movement(_move_input, delta)
     boost_component.update(delta, global_position, not heat_component.is_overheated())
     update_orientation(delta)
+    update_weapons(delta, Input.is_action_pressed(&"fire_left"), Input.is_action_pressed(&"fire_right"))
 
 
 ## Đổi khung mech lúc chạy (Khoang mech ở M9 sẽ gọi hàm này).
@@ -59,10 +65,44 @@ func set_chassis(data: ChassisData) -> void:
         Log.warn("chassis_data rỗng — mech giữ nguyên chỉ số cũ", "MechController")
         return
     chassis_data = data
+    core_hp = data.core_hp
+    core_health_changed.emit(core_hp, data.core_hp)
     heat_component.configure(data)
     armor_component.configure(data)
     boost_component.configure(data)
     chassis_changed.emit(data)
+
+
+## Hai mount bắn độc lập nhau, cùng ngắm về một điểm.
+func update_weapons(delta: float, fire_left: bool, fire_right: bool) -> void:
+    var aim_point: Vector3 = global_position - global_transform.basis.z
+    if aim_controller != null:
+        aim_point = aim_controller.get_aim_point()
+    if weapon_mount_left != null:
+        weapon_mount_left.update(delta, fire_left, heat_component, aim_point)
+    if weapon_mount_right != null:
+        weapon_mount_right.update(delta, fire_right, heat_component, aim_point)
+
+
+## Gán SwarmManager của nhiệm vụ cho mọi hệ thống cần đụng tới swarm.
+func set_swarm_manager(manager: SwarmManager) -> void:
+    boost_component.swarm_manager = manager
+    weapon_mount_left.swarm_manager = manager
+    weapon_mount_right.swarm_manager = manager
+
+
+## DamageResolver gọi sau khi đã đổi core_hp.
+func notify_core_changed() -> void:
+    var maximum: float = chassis_data.core_hp if chassis_data != null else core_hp
+    core_health_changed.emit(core_hp, maximum)
+    if core_hp <= 0.0:
+        died.emit()
+
+
+func get_core_ratio() -> float:
+    if chassis_data == null or chassis_data.core_hp <= 0.0:
+        return 0.0
+    return core_hp / chassis_data.core_hp
 
 
 ## Góc yaw của camera; input di chuyển được xoay theo góc này nên WASD luôn
