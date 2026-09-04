@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ChassisData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/chassis_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"chs_atlas_h"
+display_name_key = "chassis.chs_atlas_h.name"
+unlock_chapter = 4
+module_slots = 3
+core_hp = 145.0
+armor_front = 95.0
+armor_side = 80.0
+armor_rear = 66.0
+move_speed = 4.4
+leg_turn_speed_degrees = 330.0
+heat_capacity = 125.0
+heat_dissipation = 9.0
+boost_charges = 2
+boost_recharge_seconds = 4.6
+boost_skips_iframe_cooldown = false
+loot_radius_bonus_percent = 0.0
+knockback_immune = true
+explosive_damage_taken_multiplier = 0.8
