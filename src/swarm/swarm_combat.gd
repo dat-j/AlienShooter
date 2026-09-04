@@ -46,8 +46,11 @@ func update_melee(
 ) -> int:
     if manager == null or grid == null or delta < 0.0:
         return 0
+    var batched_delta: float = manager.get_batched_delta(delta)
     for index: int in range(manager._alive_count):
-        manager._timers[index] = maxf(0.0, manager._timers[index] - delta)
+        if not manager.is_id_in_current_batch(manager._ids[index]):
+            continue
+        manager._timers[index] = maxf(0.0, manager._timers[index] - batched_delta)
 
     var max_range: float = 0.0
     for index: int in range(manager._alive_count):
@@ -59,7 +62,7 @@ func update_melee(
         if id < 0 or id >= SwarmManager.MAX_SWARM_UNITS:
             continue
         var index: int = manager._index_by_id[id]
-        if index < 0 or manager._timers[index] > 0.0:
+        if index < 0 or not manager.is_id_in_current_batch(id) or manager._timers[index] > 0.0:
             continue
         var swarm_type: int = manager._types[index]
         var offset: Vector3 = manager._positions[index] - target_position

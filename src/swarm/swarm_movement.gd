@@ -38,9 +38,12 @@ func update(manager: SwarmManager, flow_field: FlowField, delta: float) -> void:
         return
     _sync_grid(manager)
     var alive_count: int = manager._alive_count
+    var batched_delta: float = manager.get_batched_delta(delta)
     for index: int in range(alive_count):
-        var position: Vector3 = manager._positions[index]
         var id: int = manager._ids[index]
+        if not manager.is_id_in_current_batch(id):
+            continue
+        var position: Vector3 = manager._positions[index]
         var flow_2d: Vector2 = flow_field.sample_direction(position)
         var flow: Vector3 = Vector3(flow_2d.x, 0.0, flow_2d.y)
         var separation: Vector3 = _separation(manager, position, id)
@@ -56,12 +59,12 @@ func update(manager: SwarmManager, flow_field: FlowField, delta: float) -> void:
         if steering.length_squared() > 0.0001:
             desired_velocity = steering.normalized() * max_speed
         var velocity: Vector3 = manager._velocities[index].move_toward(
-            desired_velocity, acceleration * delta
+            desired_velocity, acceleration * batched_delta
         )
-        var next_position: Vector3 = position + velocity * delta
+        var next_position: Vector3 = position + velocity * batched_delta
         if not flow_field.is_walkable(next_position):
             velocity = _slide_from_wall(flow_field, position, velocity)
-            next_position = position + velocity * delta
+            next_position = position + velocity * batched_delta
         manager._velocities[index] = velocity
         manager._positions[index] = next_position
         _grid.move(id, next_position)

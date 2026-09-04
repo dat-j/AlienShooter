@@ -30,6 +30,11 @@ var _free_ids: PackedInt32Array = PackedInt32Array()
 var _alive_count: int = 0
 var _free_count: int = MAX_SWARM_UNITS
 
+## Bộ lập lịch cập nhật theo lô. Chỉ chấp nhận 1/2/4 để giữ nhịp đều và
+## cho phép dùng phép modulo rẻ, deterministic theo id logic.
+var _batch_count: int = 1
+var _batch_cursor: int = 0
+
 ## Scene VFX chết được cấp phát qua PoolManager. Để trống trong test/headless
 ## hoặc trước khi content thật được gán.
 var death_vfx_scene: PackedScene
@@ -202,6 +207,42 @@ func _spawn_death_vfx(position: Vector3) -> void:
     if vfx is Node3D:
         (vfx as Node3D).global_position = position
     add_child(vfx)
+
+
+## Cấu hình số lô hợp lệ. Cursor reset để thay đổi cấu hình có kết quả dự
+## đoán được. Trả false và giữ nguyên cấu hình nếu giá trị không hợp lệ.
+func set_batch_count(count: int) -> bool:
+    if count != 1 and count != 2 and count != 4:
+        return false
+    _batch_count = count
+    _batch_cursor = 0
+    return true
+
+
+func get_batch_count() -> int:
+    return _batch_count
+
+
+## Lô cần chạy ở frame hiện tại. Caller phải gọi advance_batch() đúng một
+## lần sau khi hoàn tất mọi hệ thống swarm của frame.
+func get_current_batch() -> int:
+    return _batch_cursor
+
+
+func advance_batch() -> void:
+    _batch_cursor = (_batch_cursor + 1) % _batch_count
+
+
+## Kiểm tra id thuộc lô hiện tại. Phân lô theo id thay vì index để swap-kill
+## không làm một đơn vị đổi lịch cập nhật bất ngờ.
+func is_id_in_current_batch(id: int) -> bool:
+    return id >= 0 and id < MAX_SWARM_UNITS and id % _batch_count == _batch_cursor
+
+
+## Delta tích luỹ tương ứng chu kỳ của một đơn vị. Nhờ vậy vận tốc/gia tốc và
+## timer vẫn tiến theo thời gian thực khi chỉ xử lý mỗi 2 hoặc 4 frame.
+func get_batched_delta(frame_delta: float) -> float:
+    return frame_delta * float(_batch_count)
 
 
 ## Số đơn vị swarm đang sống. Không duyệt mảng.
