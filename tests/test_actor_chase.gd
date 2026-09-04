@@ -33,6 +33,9 @@ func test_chase_decelerates_inside_arrival_range_without_jitter() -> void:
     var target: Node3D = add_child_autofree(Node3D.new()) as Node3D
     target.global_position = Vector3(1, 0, 0)
     var actor := _actor(Vector3.ZERO, _field(), target)
+    # Giữ hồi chiêu để actor ở lại Chase: bài này đo riêng việc giảm tốc,
+    # còn lối vào Attack đã có test riêng ở test_actor_melee.gd (T-405).
+    actor.attack_cooldown_remaining = 1.0
     actor.velocity = Vector3(4, 0, 0)
     actor.state_machine.current_state.physics_update(0.1)
     assert_eq(actor.velocity, Vector3(2, 0, 0))

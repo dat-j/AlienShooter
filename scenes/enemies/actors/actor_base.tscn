@@ -1,10 +1,11 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://src/ai/actor_enemy.gd" id="1_actor"]
 [ext_resource type="Script" path="res://src/ai/ai_state_machine.gd" id="2_machine"]
 [ext_resource type="Script" path="res://src/ai/states/idle_state.gd" id="3_idle"]
 [ext_resource type="Script" path="res://src/ai/states/chase_state.gd" id="4_chase"]
 [ext_resource type="Script" path="res://src/ai/states/attack_state.gd" id="5_attack"]
+[ext_resource type="Script" path="res://src/ai/states/ranged_attack_state.gd" id="10_ranged"]
 [ext_resource type="Script" path="res://src/ai/states/stagger_state.gd" id="6_stagger"]
 [ext_resource type="Script" path="res://src/ai/states/death_state.gd" id="7_death"]
 [ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="8_hurtbox"]
@@ -24,6 +25,16 @@ albedo_color = Color(0.55, 0.18, 0.12, 1)
 [sub_resource type="CapsuleShape3D" id="HurtShape"]
 radius = 0.7
 height = 2.1
+
+[sub_resource type="BoxMesh" id="LaserMesh"]
+size = Vector3(0.05, 0.05, 1.0)
+
+[sub_resource type="StandardMaterial3D" id="LaserMaterial"]
+shading_mode = 0
+albedo_color = Color(1, 0.25, 0.15, 0.55)
+emission_enabled = true
+emission = Color(1, 0.3, 0.2, 1)
+transparency = 1
 
 [sub_resource type="SphereShape3D" id="HitShape"]
 radius = 1.0
@@ -49,6 +60,12 @@ shape = SubResource("BodyShape")
 mesh = SubResource("BodyMesh")
 material_override = SubResource("BodyMaterial")
 
+[node name="AimLaser" type="MeshInstance3D" parent="Model"]
+visible = false
+mesh = SubResource("LaserMesh")
+material_override = SubResource("LaserMaterial")
+cast_shadow = 0
+
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Model"]
 libraries = {&"": SubResource("AnimationLibrary")}
 
@@ -65,6 +82,9 @@ script = ExtResource("4_chase")
 
 [node name="Attack" type="Node" parent="StateMachine"]
 script = ExtResource("5_attack")
+
+[node name="RangedAttack" type="Node" parent="StateMachine"]
+script = ExtResource("10_ranged")
 
 [node name="Stagger" type="Node" parent="StateMachine"]
 script = ExtResource("6_stagger")

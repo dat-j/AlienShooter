@@ -30,6 +30,19 @@ func physics_update(delta: float) -> void:
 
     var target_offset: Vector3 = actor.target.global_position - actor.global_position
     target_offset.y = 0.0
+    var ranged_range: float = actor.enemy_data.ranged_attack_range
+    if (
+        ranged_range > 0.0
+        and machine.has_state(&"RangedAttack")
+        and target_offset.length_squared() <= ranged_range * ranged_range
+    ):
+        # Actor tầm xa không lao vào cận chiến: đứng lại chờ hồi chiêu rồi ngắm.
+        actor.velocity = actor.velocity.move_toward(Vector3.ZERO, acceleration * delta)
+        actor.move_and_slide()
+        if actor.attack_cooldown_remaining <= 0.0:
+            machine.transition_to(&"RangedAttack")
+        return
+
     var stop_distance: float = actor.enemy_data.attack_range + arrival_margin
     if target_offset.length_squared() <= stop_distance * stop_distance:
         # Giảm tốc trước khi vào Attack để tránh rung lắc quanh mục tiêu.
