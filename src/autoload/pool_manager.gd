@@ -22,6 +22,11 @@ class _PoolEntry:
 var _pools: Dictionary = {}
 var _node_to_entry: Dictionary = {}
 
+## Pool riêng cho DamageInfo (RefCounted, không phải node) — xem TDD §8.1.
+var _damage_info_free: Array[DamageInfo] = []
+var _damage_info_in_use: int = 0
+var _damage_info_created: int = 0
+
 ## Số lần instantiate() đã gọi trong suốt vòng đời PoolManager. Chỉ dùng để
 ## kiểm toán hiệu năng (test T-009): số này không được tăng sau khi pool đã
 ## đủ node rảnh để tái sử dụng.
@@ -82,6 +87,45 @@ func clear_all() -> void:
     var keys: Array = _pools.keys().duplicate()
     for scene: PackedScene in keys:
         clear_pool(scene)
+
+
+## --- DamageInfo (T-501) -------------------------------------------------
+
+func prewarm_damage_info(count: int) -> void:
+    for _i: int in range(count):
+        _damage_info_free.append(_create_damage_info())
+
+
+## Lấy một DamageInfo đã reset. Không bao giờ cấp phát thêm nếu pool còn hàng.
+func get_damage_info() -> DamageInfo:
+    var info: DamageInfo
+    if _damage_info_free.is_empty():
+        info = _create_damage_info()
+    else:
+        info = _damage_info_free.pop_back()
+    info.reset()
+    _damage_info_in_use += 1
+    return info
+
+
+func release_damage_info(info: DamageInfo) -> void:
+    if info == null:
+        return
+    _damage_info_in_use = maxi(_damage_info_in_use - 1, 0)
+    _damage_info_free.append(info)
+
+
+func get_damage_info_stats() -> Dictionary:
+    return {
+        "total": _damage_info_created,
+        "in_use": _damage_info_in_use,
+        "free": _damage_info_free.size(),
+    }
+
+
+func _create_damage_info() -> DamageInfo:
+    _damage_info_created += 1
+    return DamageInfo.new()
 
 
 func get_stats() -> Dictionary:
