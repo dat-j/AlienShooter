@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://src/ai/actor_enemy.gd" id="1_actor"]
 [ext_resource type="Script" path="res://src/ai/ai_state_machine.gd" id="2_machine"]
@@ -7,6 +7,8 @@
 [ext_resource type="Script" path="res://src/ai/states/attack_state.gd" id="5_attack"]
 [ext_resource type="Script" path="res://src/ai/states/stagger_state.gd" id="6_stagger"]
 [ext_resource type="Script" path="res://src/ai/states/death_state.gd" id="7_death"]
+[ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="8_hurtbox"]
+[ext_resource type="Script" path="res://src/combat/hitbox.gd" id="9_hitbox"]
 
 [sub_resource type="CapsuleShape3D" id="BodyShape"]
 radius = 0.65
@@ -75,7 +77,8 @@ script = ExtResource("7_death")
 [node name="StatusComponent" type="Node" parent="."]
 
 [node name="Hurtbox" type="Area3D" parent="."]
-collision_layer = 8
+script = ExtResource("8_hurtbox")
+collision_layer = 16
 collision_mask = 0
 monitorable = true
 
@@ -83,8 +86,9 @@ monitorable = true
 shape = SubResource("HurtShape")
 
 [node name="Hitbox" type="Area3D" parent="."]
+script = ExtResource("9_hitbox")
 collision_layer = 0
-collision_mask = 2
+collision_mask = 8
 monitoring = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox"]
