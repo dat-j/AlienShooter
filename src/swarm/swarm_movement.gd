@@ -16,6 +16,11 @@ const WALL_PROBES: Array[Vector3] = [Vector3.RIGHT, Vector3.LEFT, Vector3.FORWAR
 
 var max_speed: float = 4.0
 var acceleration: float = 18.0
+var _speed_by_type: PackedFloat32Array = PackedFloat32Array()
+var _jump_distance_by_type: PackedFloat32Array = PackedFloat32Array()
+var _jump_range_by_type: PackedFloat32Array = PackedFloat32Array()
+var _jump_cooldown_by_type: PackedFloat32Array = PackedFloat32Array()
+var _jump_timers: PackedFloat32Array = PackedFloat32Array()
 
 var _grid: SpatialHashGrid
 var _neighbours: PackedInt32Array = PackedInt32Array()
@@ -29,11 +34,27 @@ func _init(cell_size: float = SpatialHashGrid.DEFAULT_CELL_SIZE) -> void:
     _tracked.resize(SwarmManager.MAX_SWARM_UNITS)
     _tracked.fill(0)
     _alive_ids.resize(SwarmManager.MAX_SWARM_UNITS)
+    _jump_timers.resize(SwarmManager.MAX_SWARM_UNITS)
+    _speed_by_type.resize(256)
+    _speed_by_type.fill(max_speed)
+    _jump_distance_by_type.resize(256)
+    _jump_range_by_type.resize(256)
+    _jump_cooldown_by_type.resize(256)
+
+
+func configure_type(data: EnemyData) -> void:
+    if data == null or data.execution_path != 0:
+        return
+    var type_id: int = clampi(data.swarm_type_id, 0, 255)
+    _speed_by_type[type_id] = data.move_speed
+    _jump_distance_by_type[type_id] = data.jump_distance
+    _jump_range_by_type[type_id] = data.jump_trigger_range
+    _jump_cooldown_by_type[type_id] = data.jump_cooldown_seconds
 
 
 ## Cập nhật toàn bộ đơn vị sống. Grid được đồng bộ trước và sau bước tích
 ## phân để các truy vấn trong frame dùng cùng một snapshot ổn định.
-func update(manager: SwarmManager, flow_field: FlowField, delta: float) -> void:
+func update(manager: SwarmManager, flow_field: FlowField, delta: float, target_position: Vector3 = Vector3.INF) -> void:
     if manager == null or flow_field == null or delta <= 0.0:
         return
     _sync_grid(manager)
@@ -44,6 +65,10 @@ func update(manager: SwarmManager, flow_field: FlowField, delta: float) -> void:
         if not manager.is_id_in_current_batch(id):
             continue
         var position: Vector3 = manager._positions[index]
+        _jump_timers[id] = maxf(0.0, _jump_timers[id] - batched_delta)
+        var swarm_type: int = manager._types[index]
+        if target_position != Vector3.INF and _try_jump(manager, flow_field, index, id, swarm_type, target_position):
+            continue
         var flow_2d: Vector2 = flow_field.sample_direction(position)
         var flow: Vector3 = Vector3(flow_2d.x, 0.0, flow_2d.y)
         var separation: Vector3 = _separation(manager, position, id)
@@ -57,7 +82,7 @@ func update(manager: SwarmManager, flow_field: FlowField, delta: float) -> void:
         )
         var desired_velocity: Vector3 = Vector3.ZERO
         if steering.length_squared() > 0.0001:
-            desired_velocity = steering.normalized() * max_speed
+            desired_velocity = steering.normalized() * _speed_by_type[swarm_type]
         var velocity: Vector3 = manager._velocities[index].move_toward(
             desired_velocity, acceleration * batched_delta
         )
@@ -68,6 +93,26 @@ func update(manager: SwarmManager, flow_field: FlowField, delta: float) -> void:
         manager._velocities[index] = velocity
         manager._positions[index] = next_position
         _grid.move(id, next_position)
+
+
+func _try_jump(manager: SwarmManager, flow_field: FlowField, index: int, id: int, swarm_type: int, target: Vector3) -> bool:
+    var jump_distance: float = _jump_distance_by_type[swarm_type]
+    var trigger_range: float = _jump_range_by_type[swarm_type]
+    if jump_distance <= 0.0 or trigger_range <= 0.0 or _jump_timers[id] > 0.0:
+        return false
+    var offset: Vector3 = target - manager._positions[index]
+    offset.y = 0.0
+    var distance: float = offset.length()
+    if distance > trigger_range or distance <= jump_distance * 0.5:
+        return false
+    var landing: Vector3 = manager._positions[index] + offset.normalized() * minf(jump_distance, distance)
+    if not flow_field.is_walkable(landing):
+        return false
+    manager._positions[index] = landing
+    manager._velocities[index] = offset.normalized() * _speed_by_type[swarm_type]
+    _jump_timers[id] = _jump_cooldown_by_type[swarm_type]
+    _grid.move(id, landing)
+    return true
 
 
 func get_grid() -> SpatialHashGrid:

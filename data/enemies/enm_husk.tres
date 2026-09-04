@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/resources/enemy_data.gd" id="1"]
+[sub_resource type="SphereMesh" id="Mesh_husk"]
+radius = 0.9
+height = 1.8
+[sub_resource type="StandardMaterial3D" id="Mat_husk"]
+albedo_color = Color(0.28, 0.18, 0.42, 1)
+
+[resource]
+script = ExtResource("1")
+id = &"enm_husk"
+display_name_key = "enemy.enm_husk.name"
+chapter = 2
+execution_path = 0
+max_hp = 30.0
+move_speed = 5.0
+contact_damage = 9.0
+contact_damage_type = 0
+spawn_budget_cost = 2
+perception_radius = 12.0
+attack_range = 1.7
+attack_cooldown_seconds = 1.0
+swarm_mesh = SubResource("Mesh_husk")
+swarm_material = SubResource("Mat_husk")
+swarm_type_id = 2
+swarm_scale = Vector3(1.25, 1.35, 1.25)
+swarm_tint = Color(0.28, 0.18, 0.42, 1)

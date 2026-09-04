@@ -39,3 +39,11 @@ class_name EnemyData extends Resource
 @export var actor_scene: PackedScene    # dùng khi execution_path == ACTOR
 @export var swarm_mesh: Mesh             # dùng khi execution_path == SWARM
 @export var swarm_material: Material
+
+@export_group("Swarm")
+@export_range(0, 255, 1) var swarm_type_id: int = 0
+@export var swarm_scale: Vector3 = Vector3.ONE
+@export var swarm_tint: Color = Color.WHITE
+@export var jump_distance: float = 0.0
+@export var jump_trigger_range: float = 0.0
+@export var jump_cooldown_seconds: float = 0.0
