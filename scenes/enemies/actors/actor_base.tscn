@@ -1,6 +1,12 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://src/ai/actor_enemy.gd" id="1_actor"]
+[ext_resource type="Script" path="res://src/ai/ai_state_machine.gd" id="2_machine"]
+[ext_resource type="Script" path="res://src/ai/states/idle_state.gd" id="3_idle"]
+[ext_resource type="Script" path="res://src/ai/states/chase_state.gd" id="4_chase"]
+[ext_resource type="Script" path="res://src/ai/states/attack_state.gd" id="5_attack"]
+[ext_resource type="Script" path="res://src/ai/states/stagger_state.gd" id="6_stagger"]
+[ext_resource type="Script" path="res://src/ai/states/death_state.gd" id="7_death"]
 
 [sub_resource type="CapsuleShape3D" id="BodyShape"]
 radius = 0.65
@@ -47,6 +53,22 @@ libraries = {&"": SubResource("AnimationLibrary")}
 [node name="AnimationTree" type="AnimationTree" parent="Model"]
 
 [node name="StateMachine" type="Node" parent="."]
+script = ExtResource("2_machine")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("3_idle")
+
+[node name="Chase" type="Node" parent="StateMachine"]
+script = ExtResource("4_chase")
+
+[node name="Attack" type="Node" parent="StateMachine"]
+script = ExtResource("5_attack")
+
+[node name="Stagger" type="Node" parent="StateMachine"]
+script = ExtResource("6_stagger")
+
+[node name="Death" type="Node" parent="StateMachine"]
+script = ExtResource("7_death")
 
 [node name="HealthComponent" type="Node" parent="."]
 
