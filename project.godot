@@ -15,7 +15,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
 
-Logger="*res://src/autoload/logger.gd"
+Log="*res://src/autoload/log.gd"
 EventBus="*res://src/autoload/event_bus.gd"
 ContentDB="*res://src/autoload/content_db.gd"
 PoolManager="*res://src/autoload/pool_manager.gd"
