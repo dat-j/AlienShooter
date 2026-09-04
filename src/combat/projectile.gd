@@ -12,6 +12,8 @@ const MAX_LIFETIME: float = 4.0
 const DEFAULT_SPEED: float = 60.0
 ## WORLD + ENEMY_HURTBOX + PLAYER_HURTBOX; đạn tự lọc phe qua nguồn bắn.
 const HIT_MASK: int = 1 | 8 | 16
+## Bán kính va chạm với swarm — rộng hơn mesh một chút cho đỡ hụt.
+const SWARM_HIT_RADIUS: float = 0.7
 
 ## SwarmManager của nhiệm vụ; để trống thì đạn chỉ đánh actor và tường.
 var swarm_manager: SwarmManager = null
@@ -115,7 +117,7 @@ func _sweep_swarm(from: Vector3, to: Vector3) -> bool:
     if swarm_manager == null or _damage <= 0.0:
         return false
     var killed: int = swarm_manager.damage_along_ray(
-        from, to, _damage, _pierce_remaining if _pierce_remaining > 0 else 1
+        from, to, _damage, _pierce_remaining if _pierce_remaining > 0 else 1, SWARM_HIT_RADIUS
     )
     if killed <= 0:
         return false
