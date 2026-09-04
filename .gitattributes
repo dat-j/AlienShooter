@@ -1,0 +1,17 @@
+# Godot text resource — merge theo dòng
+*.gd     text eol=lf diff=gdscript
+*.tscn   text eol=lf
+*.tres   text eol=lf
+*.godot  text eol=lf
+*.gdshader text eol=lf
+*.md     text eol=lf
+*.json   text eol=lf
+
+# Nhị phân — không bao giờ merge
+*.png    binary
+*.jpg    binary
+*.glb    binary
+*.gltf   binary
+*.ogg    binary
+*.wav    binary
+*.ttf    binary

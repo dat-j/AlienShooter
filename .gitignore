@@ -1,0 +1,25 @@
+# Godot 4
+.godot/
+/android/
+*.translation
+
+# Import cache
+.import/
+export.cfg
+export_presets.cfg
+export/
+build/
+
+# Mono
+.mono/
+data_*/
+mono_crash.*.json
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log và save cục bộ
+logs/
+*.log
