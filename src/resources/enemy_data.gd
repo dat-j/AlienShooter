@@ -28,6 +28,17 @@ class_name EnemyData extends Resource
 @export var attack_recovery_seconds: float = 0.4
 @export var attack_cooldown_seconds: float = 1.0
 
+@export_group("Tấn công tầm xa")
+@export var ranged_attack_range: float = 0.0    # 0 = loại này không có đòn tầm xa
+@export var ranged_damage: float = 0.0
+@export var ranged_damage_type: DamageTypes.Type
+@export var ranged_aim_seconds: float = 0.9     # thời gian ngắm, xem GDD §8.2 (Lancer)
+@export var ranged_recovery_seconds: float = 0.4
+@export var ranged_cooldown_seconds: float = 2.0
+@export var preferred_distance: float = 10.0    # khoảng cách actor cố giữ với mục tiêu
+@export var projectile_scene: PackedScene
+@export var projectile_speed: float = 25.0
+
 @export_group("Trạng thái")
 @export var inflicts_status: Array[StringName] = []
 @export var immune_status: Array[StringName] = []
