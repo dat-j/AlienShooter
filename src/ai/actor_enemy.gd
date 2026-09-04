@@ -13,13 +13,18 @@ signal died(actor: ActorEnemy)
 @onready var state_machine: Node = $StateMachine
 @onready var health_component: Node = $HealthComponent
 @onready var status_component: Node = $StatusComponent
-@onready var hurtbox: Area3D = $Hurtbox
-@onready var hitbox: Area3D = $Hitbox
+@onready var hurtbox: Hurtbox = $Hurtbox
+@onready var hitbox: Hitbox = $Hitbox
 
 var current_health: float = 1.0
 var flow_field: FlowField
 var target: Node3D
+var attack_cooldown_remaining: float = 0.0
 var _active: bool = false
+
+
+func _physics_process(delta: float) -> void:
+    attack_cooldown_remaining = maxf(0.0, attack_cooldown_remaining - delta)
 
 
 func _ready() -> void:
@@ -56,11 +61,14 @@ func _on_acquired() -> void:
     if enemy_data != null:
         current_health = enemy_data.max_hp
     velocity = Vector3.ZERO
+    attack_cooldown_remaining = 0.0
     _set_active(true)
 
 
 func _on_released() -> void:
     velocity = Vector3.ZERO
+    attack_cooldown_remaining = 0.0
+    hitbox.close_window()
     target = null
     flow_field = null
     _set_active(false)

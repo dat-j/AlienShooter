@@ -23,7 +23,7 @@ func enter(_previous_state: StringName = &"") -> void:
 func physics_update(delta: float) -> void:
     if actor == null or actor.enemy_data == null or delta <= 0.0:
         return
-    if actor.flow_field == null or not is_instance_valid(actor.target):
+    if not is_instance_valid(actor.target):
         actor.velocity = actor.velocity.move_toward(Vector3.ZERO, acceleration * delta)
         actor.move_and_slide()
         return
@@ -32,7 +32,14 @@ func physics_update(delta: float) -> void:
     target_offset.y = 0.0
     var stop_distance: float = actor.enemy_data.attack_range + arrival_margin
     if target_offset.length_squared() <= stop_distance * stop_distance:
-        # Giảm tốc thay vì đổi hướng liên tục quanh ô mục tiêu, tránh rung lắc.
+        # Giảm tốc trước khi vào Attack để tránh rung lắc quanh mục tiêu.
+        actor.velocity = actor.velocity.move_toward(Vector3.ZERO, acceleration * delta)
+        actor.move_and_slide()
+        if actor.attack_cooldown_remaining <= 0.0:
+            machine.transition_to(&"Attack")
+        return
+
+    if actor.flow_field == null:
         actor.velocity = actor.velocity.move_toward(Vector3.ZERO, acceleration * delta)
         actor.move_and_slide()
         return
