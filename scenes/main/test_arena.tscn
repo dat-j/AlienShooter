@@ -10,9 +10,9 @@
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
 background_color = Color(0.03, 0.04, 0.055, 1)
-ambient_light_source = 3
-ambient_light_color = Color(0.45, 0.55, 0.7, 1)
-ambient_light_energy = 0.6
+ambient_light_source = 2
+ambient_light_color = Color(0.4, 0.5, 0.68, 1)
+ambient_light_energy = 0.45
 
 [sub_resource type="StandardMaterial3D" id="Mat_floor"]
 albedo_color = Color(0.11, 0.13, 0.16, 1)
@@ -80,7 +80,9 @@ script = ExtResource("3_demo")
 environment = SubResource("Environment_arena")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.906308, 0, 0.422618, 0.346189, 0.573576, -0.742404, -0.242404, 0.819152, 0.519837, 0, 20, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 0)
+rotation_degrees = Vector3(-55, -25, 0)
+light_energy = 1.2
 shadow_enabled = true
 
 [node name="Floor" type="StaticBody3D" parent="."]
@@ -144,7 +146,8 @@ material_override = SubResource("Mat_block")
 shape = SubResource("Shape_wall_x")
 
 [node name="Ramp" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, -0, -0, 0.951057, -0.309017, 0, 0.309017, 0.951057, 14, 1.6, -10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 1.6, -10)
+rotation_degrees = Vector3(-18, 0, 0)
 collision_layer = 1
 collision_mask = 0
 

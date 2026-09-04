@@ -128,5 +128,6 @@ script = ExtResource("4_rig")
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
 current = true
-transform = Transform3D(1, 0, 0, 0, 0.469472, -0.882948, 0, 0.882948, 0.469472, 0, 19.4248, 10.3284)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 19.4248, 10.3284)
+rotation_degrees = Vector3(-62, 0, 0)
 fov = 38.0
