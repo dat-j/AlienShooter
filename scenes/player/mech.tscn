@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://src/player/mech_controller.gd" id="1_mech"]
 [ext_resource type="Script" path="res://src/combat/hurtbox.gd" id="2_hurtbox"]
@@ -12,6 +12,10 @@
 [ext_resource type="Script" path="res://src/player/weapon_mount.gd" id="10_mount"]
 [ext_resource type="Resource" path="res://data/weapons/wpn_mk2_autocannon.tres" id="11_wpn_l"]
 [ext_resource type="Resource" path="res://data/weapons/wpn_twin_repeater.tres" id="12_wpn_r"]
+[ext_resource type="Script" path="res://src/vfx/mech_vfx.gd" id="13_vfx"]
+[ext_resource type="Shader" path="res://assets/materials/mech_heat.gdshader" id="14_heat"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/vent_steam.tscn" id="15_steam"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/plate_break.tscn" id="16_plate"]
 
 [sub_resource type="CapsuleShape3D" id="BodyShape"]
 radius = 0.9
@@ -27,10 +31,16 @@ roughness = 0.75
 [sub_resource type="BoxMesh" id="TorsoMesh"]
 size = Vector3(2.0, 1.2, 1.6)
 
-[sub_resource type="StandardMaterial3D" id="TorsoMaterial"]
-albedo_color = Color(0.42, 0.46, 0.52, 1)
-metallic = 0.35
-roughness = 0.55
+[sub_resource type="ShaderMaterial" id="TorsoMaterial"]
+shader = ExtResource("14_heat")
+shader_parameter/albedo_color = Color(0.42, 0.46, 0.52, 1)
+shader_parameter/metallic_amount = 0.35
+shader_parameter/roughness_amount = 0.55
+shader_parameter/heat_color = Color(0.878, 0.231, 0.231, 1)
+shader_parameter/heat_glow = 0.0
+shader_parameter/heat_energy = 3.0
+shader_parameter/pulse_hz = 3.0
+shader_parameter/pulse_depth = 0.25
 
 [sub_resource type="BoxMesh" id="MuzzleMesh"]
 size = Vector3(0.25, 0.25, 1.2)
@@ -98,6 +108,13 @@ script = ExtResource("7_armor")
 script = ExtResource("8_boost")
 
 [node name="ModuleComponent" type="Node" parent="."]
+
+[node name="MechVfx" type="Node" parent="."]
+script = ExtResource("13_vfx")
+mech_path = NodePath("..")
+glow_mesh_paths = [NodePath("../TorsoPivot/TorsoModel")]
+vent_steam_scene = ExtResource("15_steam")
+plate_break_scene = ExtResource("16_plate")
 
 [node name="StatusComponent" type="Node" parent="."]
 script = ExtResource("9_status")

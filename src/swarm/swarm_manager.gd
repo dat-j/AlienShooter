@@ -9,8 +9,18 @@ extends Node3D
 ## cuối được hoán đổi vào vị trí của nó để giữ dữ liệu liên tục và không cần
 ## dịch chuyển cả mảng.
 
+## Tổng kết sát thương của cả frame, phát đúng MỘT lần. Damage number và
+## VFX xác quái đọc tín hiệu này thay vì bám từng con — 300 con trúng đòn
+## cùng lúc mà bắn ra 300 sự kiện thì cả hai hệ thống đó đều sập (TDD §12.7,
+## docs/04-UX-UI.md §2.4 "gộp sát thương swarm").
+signal damage_reported(centre: Vector3, total_damage: float, hits: int, kills: int)
+
 const MAX_SWARM_UNITS: int = 400
 const STATE_ALIVE: int = 1
+## Số VFX chết được phép sinh riêng lẻ trong một frame. Vượt qua thì phần
+## còn lại gộp vào `damage_reported` để GibManager xử lý một cục — đây là
+## hàng rào chống "bão hạt" khi quét sạch một đàn (T-605).
+const MAX_DEATH_VFX_PER_FRAME: int = 10
 
 var _positions: PackedVector3Array = PackedVector3Array()
 var _velocities: PackedVector3Array = PackedVector3Array()
@@ -48,6 +58,12 @@ var _cone_candidates: PackedInt32Array = PackedInt32Array()
 ## Lưới băm không gian của SwarmMovement. Không bắt buộc: khi để trống, mọi
 ## truy vấn rơi về quét tuyến tính trên mảng liên tục (đúng nhưng O(n)).
 var _grid: SpatialHashGrid = null
+
+var _report_damage: float = 0.0
+var _report_position_sum: Vector3 = Vector3.ZERO
+var _report_hits: int = 0
+var _report_kills: int = 0
+var _death_vfx_this_frame: int = 0
 
 ## Lưới do SwarmMovement đồng bộ mỗi frame, nên nó KHÔNG biết những đơn vị
 ## vừa spawn/kill sau lần đồng bộ gần nhất. Truy vấn chiến đấu chỉ được tin
@@ -157,13 +173,15 @@ func damage_at_point(position: Vector3, radius: float, damage: float) -> int:
             index += 1
             continue
         hit_count += 1
+        var position_hit: Vector3 = _positions[index]
         _healths[index] -= damage
         if _healths[index] <= 0.0:
-            var dead_position: Vector3 = _positions[index]
             var dead_id: int = _ids[index]
             kill(dead_id)
-            _spawn_death_vfx(dead_position)
+            _record_damage(position_hit, damage, true)
+            _spawn_death_vfx(position_hit)
         else:
+            _record_damage(position_hit, damage, false)
             index += 1
     return hit_count
 
@@ -201,12 +219,14 @@ func damage_unit(id: int, damage: float) -> int:
     var index: int = _index_by_id[id]
     if index < 0 or index >= _alive_count:
         return -1
+    var position_hit: Vector3 = _positions[index]
     _healths[index] -= damage
     if _healths[index] > 0.0:
+        _record_damage(position_hit, damage, false)
         return 0
-    var dead_position: Vector3 = _positions[index]
     kill(id)
-    _spawn_death_vfx(dead_position)
+    _record_damage(position_hit, damage, true)
+    _spawn_death_vfx(position_hit)
     return 1
 
 
@@ -375,13 +395,51 @@ func _distance_to(id: int, origin: Vector3) -> float:
     return offset.length()
 
 
+## Chốt sổ frame: phát `damage_reported` nếu có gì để báo, rồi dọn bộ đếm.
+## SwarmRuntime gọi đúng một lần mỗi frame vật lý, sau khi mọi hệ thống swarm
+## đã chạy xong. Trả về số đơn vị trúng đòn trong frame vừa rồi.
+func flush_damage_report() -> int:
+    var hits: int = _report_hits
+    _death_vfx_this_frame = 0
+    if hits <= 0:
+        return 0
+    var centre: Vector3 = _report_position_sum / float(hits)
+    var total: float = _report_damage
+    var kills: int = _report_kills
+    _report_damage = 0.0
+    _report_position_sum = Vector3.ZERO
+    _report_hits = 0
+    _report_kills = 0
+    damage_reported.emit(centre, total, hits, kills)
+    return hits
+
+
+## Số VFX chết đã sinh riêng lẻ trong frame hiện tại. Trên
+## `MAX_DEATH_VFX_PER_FRAME` thì phần dư không được sinh nữa.
+func get_death_vfx_this_frame() -> int:
+    return _death_vfx_this_frame
+
+
+func _record_damage(position: Vector3, amount: float, killed: bool) -> void:
+    _report_damage += amount
+    _report_position_sum += position
+    _report_hits += 1
+    if killed:
+        _report_kills += 1
+
+
 func _spawn_death_vfx(position: Vector3) -> void:
     if death_vfx_scene == null or not is_inside_tree():
         return
+    if _death_vfx_this_frame >= MAX_DEATH_VFX_PER_FRAME:
+        return
+    _death_vfx_this_frame += 1
     var vfx: Node = PoolManager.acquire(death_vfx_scene)
+    # Vào cây TRƯỚC rồi mới đặt vị trí: global_position của node ngoài cây
+    # không có nghĩa gì và Godot trả về Transform3D() kèm lỗi.
+    add_child(vfx)
     if vfx is Node3D:
         (vfx as Node3D).global_position = position
-    add_child(vfx)
 
 
 ## Cấu hình số lô hợp lệ. Cursor reset để thay đổi cấu hình có kết quả dự

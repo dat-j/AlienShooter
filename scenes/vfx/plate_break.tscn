@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/vfx/impact_vfx.gd" id="1_impact"]
+
+[sub_resource type="ParticleProcessMaterial" id="Proc_plate_break"]
+emission_shape = 1
+emission_sphere_radius = 0.06
+direction = Vector3(0, 0, -1)
+spread = 55.0
+initial_velocity_min = 2.4
+initial_velocity_max = 6.0
+gravity = Vector3(0, -9, 0)
+scale_min = 0.4
+scale_max = 1.0
+color = Color(0.361, 0.4, 0.439, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_plate_break"]
+size = Vector3(0.12, 0.03, 0.12)
+
+[node name="PlateBreak" type="Node3D"]
+script = ExtResource("1_impact")
+lifetime = 0.5
+leaves_decal = false
+decal_kind = &"burn"
+
+[node name="Particles" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 16
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("Proc_plate_break")
+draw_pass_1 = SubResource("Mesh_plate_break")

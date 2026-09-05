@@ -14,6 +14,8 @@ signal player_respawned()
 
 @export var mech_path: NodePath = NodePath("Mech")
 @export var swarm_path: NodePath = NodePath("SwarmRuntime")
+@export var gib_manager_path: NodePath = NodePath("VfxLayer/GibManager")
+@export var decal_manager_path: NodePath = NodePath("VfxLayer/DecalManager")
 @export var wave_interval_seconds: float = 5.0
 @export var units_per_wave: int = 10
 @export var max_alive: int = 140
@@ -36,6 +38,10 @@ func _ready() -> void:
         Log.warn("Sân tập thiếu Mech hoặc SwarmRuntime — bỏ qua phần đổ quái", "ArenaDemo")
         return
     _mech.set_swarm_manager(_swarm.manager)
+    _mech.set_vfx(
+        get_node_or_null(gib_manager_path) as GibManager,
+        get_node_or_null(decal_manager_path) as DecalManager
+    )
     _mech.died.connect(_on_player_died)
 
 

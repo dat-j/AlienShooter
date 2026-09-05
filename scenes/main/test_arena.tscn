@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=39 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/mech.tscn" id="1_mech"]
 [ext_resource type="Script" path="res://src/ui/debug_stats_panel.gd" id="2_stats"]
@@ -8,6 +8,16 @@
 [ext_resource type="Script" path="res://src/swarm/swarm_renderer.gd" id="6_renderer"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud/weapon_display.tscn" id="7_weapons"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud/crosshair.tscn" id="8_crosshair"]
+[ext_resource type="Script" path="res://src/combat/gib_manager.gd" id="9_gibs"]
+[ext_resource type="Script" path="res://src/vfx/decal_manager.gd" id="10_decals"]
+[ext_resource type="Script" path="res://src/ui/damage_number_pool.gd" id="11_numbers"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/gib.tscn" id="12_gib"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/impact_metal.tscn" id="13_metal"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/impact_flesh.tscn" id="14_flesh"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/decal_blood.tscn" id="15_blood"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/decal_burn.tscn" id="16_burn"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/decal_bullet.tscn" id="17_bullet"]
+[ext_resource type="PackedScene" path="res://scenes/ui/damage_number.tscn" id="18_number"]
 
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
@@ -256,6 +266,28 @@ script = ExtResource("5_manager")
 
 [node name="SwarmRenderer" type="Node3D" parent="SwarmRuntime"]
 script = ExtResource("6_renderer")
+
+[node name="VfxLayer" type="Node3D" parent="."]
+
+[node name="GibManager" type="Node3D" parent="VfxLayer"]
+script = ExtResource("9_gibs")
+gib_scene = ExtResource("12_gib")
+impact_metal_scene = ExtResource("13_metal")
+impact_flesh_scene = ExtResource("14_flesh")
+swarm_path = NodePath("../../SwarmRuntime/SwarmManager")
+
+[node name="DecalManager" type="Node3D" parent="VfxLayer"]
+script = ExtResource("10_decals")
+decal_scenes = {
+&"blood": ExtResource("15_blood"),
+&"bullet": ExtResource("17_bullet"),
+&"burn": ExtResource("16_burn")
+}
+
+[node name="DamageNumberPool" type="Node3D" parent="VfxLayer"]
+script = ExtResource("11_numbers")
+number_scene = ExtResource("18_number")
+swarm_path = NodePath("../../SwarmRuntime/SwarmManager")
 
 [node name="HudLayer" type="CanvasLayer" parent="."]
 

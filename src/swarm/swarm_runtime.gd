@@ -54,6 +54,9 @@ func _physics_process(delta: float) -> void:
     _movement.update(manager, _flow, delta, target_position)
     _combat.update_melee(manager, _movement.get_grid(), target_position, delta, _on_swarm_melee_hit)
     renderer.sync_from_manager(manager)
+    # Chốt sổ sát thương của frame TRƯỚC khi sang lô kế: damage number và VFX
+    # xác quái phải thấy đúng một bản tổng kết cho mỗi frame (T-605, T-607).
+    manager.flush_damage_report()
     manager.advance_batch()
 
 

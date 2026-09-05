@@ -18,6 +18,11 @@ const SWARM_HIT_RADIUS: float = 0.7
 ## SwarmManager của nhiệm vụ; để trống thì đạn chỉ đánh actor và tường.
 var swarm_manager: SwarmManager = null
 
+## VFX của màn chơi (T-605, T-606). Để trống thì đạn vẫn gây sát thương bình
+## thường, chỉ là không để lại dấu vết gì.
+var gib_manager: GibManager = null
+var decal_manager: DecalManager = null
+
 ## Dùng chung cho mọi viên đạn: một vụ nổ chỉ tồn tại trong đúng một lần gọi,
 ## nên 600 viên trong pool không cần 600 bộ buffer riêng.
 static var _shared_aoe: Aoe = Aoe.new()
@@ -138,6 +143,8 @@ func _reset() -> void:
     _lifetime = 0.0
     _hit_ids.clear()
     _source = null
+    gib_manager = null
+    decal_manager = null
 
 
 ## Quét swarm bằng spatial data của SwarmManager, không qua physics.
@@ -185,6 +192,7 @@ func _sweep_bodies(from: Vector3, to: Vector3) -> bool:
     var hurtbox := collider as Hurtbox
     if hurtbox == null:
         # Tường hoặc vật cản: đạn dừng tại đây.
+        _spawn_impact(hit.get("normal", Vector3.UP) as Vector3, GibManager.Surface.METAL, &"bullet")
         _finish(true)
         return true
     var receiver: Node = hurtbox.get_receiver()
@@ -194,6 +202,7 @@ func _sweep_bodies(from: Vector3, to: Vector3) -> bool:
         _finish(true)
         return true
     _hit_ids[receiver.get_instance_id()] = true
+    _spawn_impact(hit.get("normal", Vector3.UP) as Vector3, GibManager.Surface.FLESH, &"blood")
     _deal_damage(receiver)
     hit_target.emit(global_position, receiver)
     _pierce_remaining -= 1
@@ -201,6 +210,15 @@ func _sweep_bodies(from: Vector3, to: Vector3) -> bool:
         _finish(true)
         return true
     return false
+
+
+## Kim loại toé tia lửa, thịt bắn giọt và để lại vết — hai thứ phải đọc
+## khác nhau tức thì (ART-BIBLE §8).
+func _spawn_impact(normal: Vector3, surface: GibManager.Surface, decal_kind: StringName) -> void:
+    if gib_manager != null:
+        gib_manager.spawn_impact(global_position, normal, surface)
+    if decal_manager != null:
+        decal_manager.spawn(global_position, normal, decal_kind)
 
 
 func _deal_damage(receiver: Node) -> void:

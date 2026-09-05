@@ -102,6 +102,16 @@ func set_swarm_manager(manager: SwarmManager) -> void:
     weapon_mount_right.swarm_manager = manager
 
 
+## Tiêm VFX của màn chơi xuống hai hardpoint. Không bắt buộc — mech chạy
+## độc lập trong scene test mà không cần dàn VFX nào.
+func set_vfx(gib_manager: GibManager, decal_manager: DecalManager) -> void:
+    for mount: WeaponMount in [weapon_mount_left, weapon_mount_right]:
+        if mount == null:
+            continue
+        mount.gib_manager = gib_manager
+        mount.decal_manager = decal_manager
+
+
 ## DamageResolver gọi sau khi đã đổi core_hp.
 func notify_core_changed() -> void:
     var maximum: float = chassis_data.core_hp if chassis_data != null else core_hp

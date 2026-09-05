@@ -24,6 +24,10 @@ const BEAM_SCENE: PackedScene = preload("res://scenes/vfx/hitscan_beam.tscn")
 const HEAVY_HEAT_THRESHOLD: float = 10.0
 const JUICE_RAIL_LANCE: StringName = &"wpn_rail_lance"
 
+## Chớp lửa và vỏ đạn (T-604). Vũ khí liên tục và vũ khí Energy không nhả vỏ.
+const MUZZLE_FLASH_SCENE: PackedScene = preload("res://scenes/vfx/muzzle_flash.tscn")
+const SHELL_SCENE: PackedScene = preload("res://scenes/vfx/shell_casing.tscn")
+
 @export var weapon_data: WeaponData
 ## Đầu nòng; để trống thì đạn xuất phát từ chính mount.
 @export var muzzle_path: NodePath = NodePath("MuzzleModel")
@@ -43,6 +47,12 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _hitscan: Hitscan = Hitscan.new()
 var _cone: ConeWeapon = ConeWeapon.new()
 var _aoe: Aoe = Aoe.new()
+var _ejector: ShellEjector = ShellEjector.new()
+
+## VFX của màn chơi, do MechController tiêm vào. Để trống thì bắn vẫn chạy,
+## chỉ là không có hạt — scene test không cần dựng cả dàn VFX.
+var gib_manager: GibManager = null
+var decal_manager: DecalManager = null
 
 @onready var _muzzle: Node3D = get_node_or_null(muzzle_path) as Node3D
 @onready var _shooter: Node = get_node_or_null(shooter_path)
@@ -50,6 +60,7 @@ var _aoe: Aoe = Aoe.new()
 
 func _ready() -> void:
     _hitscan.beam_scene = BEAM_SCENE
+    _ejector.shell_scene = SHELL_SCENE
     if weapon_data != null:
         equip(weapon_data)
 
@@ -218,8 +229,34 @@ func _fire(heat: HeatComponent, aim_point: Vector3) -> void:
         ammo_changed.emit(_ammo, weapon_data.max_ammo)
     _cooldown = 1.0 / maxf(weapon_data.rate_of_fire, 0.01)
     _charge = 0.0
+    _play_muzzle_effects(origin, direction)
     JuiceDirector.play(juice_event_for(weapon_data))
     fired.emit(weapon_data, origin)
+
+
+## Chớp lửa cho mọi phát bắn; vỏ đạn chỉ cho vũ khí thật sự có đạn — súng
+## laser không nhả vỏ, và vũ khí liên tục nhả 10 vỏ/giây thì đạt trần 60
+## trong sáu giây mà chẳng ai kịp nhìn.
+func _play_muzzle_effects(origin: Vector3, direction: Vector3) -> void:
+    var container: Node = get_tree().current_scene
+    if container == null:
+        container = get_tree().root
+    var node: Node = PoolManager.acquire(MUZZLE_FLASH_SCENE)
+    var flash := node as MuzzleFlash
+    if flash != null:
+        container.add_child(flash)
+        flash.flash(origin, direction)
+    else:
+        PoolManager.release(node)
+    if not ejects_shells(weapon_data):
+        return
+    _ejector.container = container
+    _ejector.eject(origin, direction)
+
+
+## Hàm thuần tuý: khẩu này có nhả vỏ đạn không.
+static func ejects_shells(data: WeaponData) -> bool:
+    return data != null and data.uses_ammo and not data.is_continuous
 
 
 ## Hàm thuần tuý: vũ khí → dòng nào trong bảng juice ART-BIBLE §9.
@@ -279,6 +316,7 @@ func _fire_hitscan(origin: Vector3, direction: Vector3) -> void:
         swarm_manager,
         weapon_data.status_to_apply
     )
+    _spawn_impact_vfx(direction)
     if weapon_data.aoe_radius <= 0.0:
         _report_hits(hits)
         return
@@ -295,6 +333,21 @@ func _fire_hitscan(origin: Vector3, direction: Vector3) -> void:
         weapon_data.status_to_apply
     )
     _report_hits(hits)
+
+
+## Tia hitscan chạm nhiều chỗ trong cùng một frame; mỗi chỗ một cụm hạt.
+## Cuối tia luôn để lại vết đạn — đó là chỗ tia cắm vào tường.
+func _spawn_impact_vfx(direction: Vector3) -> void:
+    if gib_manager == null:
+        return
+    var normal: Vector3 = -direction
+    for index: int in range(_hitscan.get_hit_count()):
+        var point: Vector3 = _hitscan.get_hit_position(index)
+        if point == Vector3.INF:
+            continue
+        gib_manager.spawn_impact(point, normal, GibManager.Surface.FLESH)
+    if decal_manager != null:
+        decal_manager.spawn(_hitscan.get_end_point(), normal, &"bullet")
 
 
 ## Chí mạng chưa có nguồn phát nào trong game (perk M9 mới sinh ra nó), nên
@@ -315,6 +368,8 @@ func _spawn_projectile(origin: Vector3, direction: Vector3) -> void:
         container = get_tree().root
     container.add_child(projectile)
     projectile.swarm_manager = swarm_manager
+    projectile.gib_manager = gib_manager
+    projectile.decal_manager = decal_manager
     projectile.configure(
         weapon_data.pierce_count,
         weapon_data.aoe_radius,
