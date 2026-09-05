@@ -10,6 +10,10 @@ signal ammo_changed(current: int, maximum: int)
 signal charge_changed(ratio: float)
 signal spin_changed(ratio: float)
 signal out_of_ammo()
+## Đòn trúng đích ngay trong frame bắn (hitscan, hình nón, nổ). Đạn bay có
+## độ trễ nên KHÔNG đi qua đây — con trỏ ngắm lấy phản hồi của chúng qua
+## `EventBus.damage_dealt`.
+signal hit_landed(count: int, is_critical: bool)
 
 ## VFX tia của vũ khí hitscan (T-505). Pooled qua PoolManager.
 const BEAM_SCENE: PackedScene = preload("res://scenes/vfx/hitscan_beam.tscn")
@@ -106,6 +110,32 @@ func add_ammo(amount: int) -> void:
     ammo_changed.emit(_ammo, weapon_data.max_ammo)
 
 
+## Bù đạn theo tỉ lệ của đạn tối đa — dạng mà hộp đạn trong màn dùng
+## (GDD §11.2: +25% đạn tối đa). Trả về số viên thực sự nạp được; vũ khí
+## Energy luôn trả 0 vì nó không có khái niệm đạn.
+func refill(fraction: float) -> int:
+    if weapon_data == null or not weapon_data.uses_ammo or fraction <= 0.0:
+        return 0
+    var before: int = _ammo
+    add_ammo(int(round(float(weapon_data.max_ammo) * fraction)))
+    return _ammo - before
+
+
+## Vũ khí này có hiện số đạn trên HUD không. Energy hiện "NĂNG LƯỢNG".
+func uses_ammo() -> bool:
+    return weapon_data != null and weapon_data.uses_ammo
+
+
+func get_max_ammo() -> int:
+    if weapon_data == null or not weapon_data.uses_ammo:
+        return 0
+    return weapon_data.max_ammo
+
+
+func is_out_of_ammo() -> bool:
+    return uses_ammo() and _ammo <= 0
+
+
 ## Quay nòng và sạc phải hoàn tất trước khi viên đầu tiên rời nòng.
 func _build_up(delta: float) -> bool:
     if weapon_data.spin_up_time > 0.0 and _spin < weapon_data.spin_up_time:
@@ -157,6 +187,7 @@ func _update_continuous(
     )
     if ticks <= 0:
         return 0
+    _report_hits(_cone.get_hit_count())
     if weapon_data.uses_ammo:
         _ammo = maxi(0, _ammo - ticks)
         ammo_changed.emit(_ammo, weapon_data.max_ammo)
@@ -215,7 +246,7 @@ func _fire_hitscan(origin: Vector3, direction: Vector3) -> void:
     # tia đã bắn ra thì phải đứng yên trong không gian.
     var container: Node = get_tree().current_scene
     _hitscan.vfx_root = container if container != null else get_tree().root
-    _hitscan.fire(
+    var hits: int = _hitscan.fire(
         _space(),
         origin,
         direction,
@@ -228,8 +259,9 @@ func _fire_hitscan(origin: Vector3, direction: Vector3) -> void:
         weapon_data.status_to_apply
     )
     if weapon_data.aoe_radius <= 0.0:
+        _report_hits(hits)
         return
-    _aoe.detonate(
+    hits += _aoe.detonate(
         _space(),
         _hitscan.get_end_point(),
         weapon_data.aoe_radius,
@@ -241,6 +273,14 @@ func _fire_hitscan(origin: Vector3, direction: Vector3) -> void:
         _shooter,
         weapon_data.status_to_apply
     )
+    _report_hits(hits)
+
+
+## Chí mạng chưa có nguồn phát nào trong game (perk M9 mới sinh ra nó), nên
+## hiện tại mọi đòn báo về đều là đòn thường.
+func _report_hits(count: int) -> void:
+    if count > 0:
+        hit_landed.emit(count, false)
 
 
 func _spawn_projectile(origin: Vector3, direction: Vector3) -> void:

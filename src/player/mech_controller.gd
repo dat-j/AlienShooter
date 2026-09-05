@@ -84,6 +84,17 @@ func update_weapons(delta: float, fire_left: bool, fire_right: bool) -> void:
         weapon_mount_right.update(delta, fire_right, heat_component, aim_point)
 
 
+## Hộp đạn bù cho **cả hai** vũ khí cùng lúc (GDD §11.2). Trả về tổng số
+## viên đã nạp — 0 nghĩa là cả hai tay đều đầy hoặc đều là vũ khí Energy.
+func refill_ammo(fraction: float) -> int:
+    var added: int = 0
+    if weapon_mount_left != null:
+        added += weapon_mount_left.refill(fraction)
+    if weapon_mount_right != null:
+        added += weapon_mount_right.refill(fraction)
+    return added
+
+
 ## Gán SwarmManager của nhiệm vụ cho mọi hệ thống cần đụng tới swarm.
 func set_swarm_manager(manager: SwarmManager) -> void:
     boost_component.swarm_manager = manager

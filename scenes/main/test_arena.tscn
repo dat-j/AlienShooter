@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/mech.tscn" id="1_mech"]
 [ext_resource type="Script" path="res://src/ui/debug_stats_panel.gd" id="2_stats"]
@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://src/swarm/swarm_runtime.gd" id="4_runtime"]
 [ext_resource type="Script" path="res://src/swarm/swarm_manager.gd" id="5_manager"]
 [ext_resource type="Script" path="res://src/swarm/swarm_renderer.gd" id="6_renderer"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud/weapon_display.tscn" id="7_weapons"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud/crosshair.tscn" id="8_crosshair"]
 
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
@@ -254,6 +256,15 @@ script = ExtResource("5_manager")
 
 [node name="SwarmRenderer" type="Node3D" parent="SwarmRuntime"]
 script = ExtResource("6_renderer")
+
+[node name="HudLayer" type="CanvasLayer" parent="."]
+
+[node name="WeaponDisplay" parent="HudLayer" instance=ExtResource("7_weapons")]
+mech_path = NodePath("../../Mech")
+
+[node name="Crosshair" parent="HudLayer" instance=ExtResource("8_crosshair")]
+mech_path = NodePath("../../Mech")
+swarm_path = NodePath("../../SwarmRuntime/SwarmManager")
 
 [node name="DebugLayer" type="CanvasLayer" parent="."]
 

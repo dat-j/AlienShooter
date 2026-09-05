@@ -10,4 +10,5 @@ enum Layer {
     ENEMY_HURTBOX = 1 << 4,
     PLAYER_HITBOX = 1 << 5,
     ENEMY_HITBOX = 1 << 6,
+    PICKUP = 1 << 7,
 }
