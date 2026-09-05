@@ -19,8 +19,10 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 Log="*res://src/autoload/log.gd"
 EventBus="*res://src/autoload/event_bus.gd"
+SettingsManager="*res://src/autoload/settings_manager.gd"
 ContentDB="*res://src/autoload/content_db.gd"
 PoolManager="*res://src/autoload/pool_manager.gd"
+JuiceDirector="*res://src/autoload/juice_director.gd"
 GameDirector="*res://src/autoload/game_director.gd"
 
 [debug]

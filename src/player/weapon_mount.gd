@@ -18,6 +18,12 @@ signal hit_landed(count: int, is_critical: bool)
 ## VFX tia của vũ khí hitscan (T-505). Pooled qua PoolManager.
 const BEAM_SCENE: PackedScene = preload("res://scenes/vfx/hitscan_beam.tscn")
 
+## Ngưỡng nhiệt mỗi phát để một khẩu được coi là "súng nặng" trong bảng juice
+## ART-BIBLE §9. Nhiệt là thước đo sức nặng sẵn có trong dữ liệu, không cần
+## thêm cờ vào WeaponData.
+const HEAVY_HEAT_THRESHOLD: float = 10.0
+const JUICE_RAIL_LANCE: StringName = &"wpn_rail_lance"
+
 @export var weapon_data: WeaponData
 ## Đầu nòng; để trống thì đạn xuất phát từ chính mount.
 @export var muzzle_path: NodePath = NodePath("MuzzleModel")
@@ -188,6 +194,7 @@ func _update_continuous(
     if ticks <= 0:
         return 0
     _report_hits(_cone.get_hit_count())
+    JuiceDirector.play(juice_event_for(weapon_data))
     if weapon_data.uses_ammo:
         _ammo = maxi(0, _ammo - ticks)
         ammo_changed.emit(_ammo, weapon_data.max_ammo)
@@ -211,7 +218,21 @@ func _fire(heat: HeatComponent, aim_point: Vector3) -> void:
         ammo_changed.emit(_ammo, weapon_data.max_ammo)
     _cooldown = 1.0 / maxf(weapon_data.rate_of_fire, 0.01)
     _charge = 0.0
+    JuiceDirector.play(juice_event_for(weapon_data))
     fired.emit(weapon_data, origin)
+
+
+## Hàm thuần tuý: vũ khí → dòng nào trong bảng juice ART-BIBLE §9.
+## Vũ khí liên tục (Flamer, Cryo, Arc) luôn là "súng nhẹ": rót sát thương
+## liên tục mà rung nặng mỗi tick thì camera không đứng yên nổi.
+static func juice_event_for(data: WeaponData) -> StringName:
+    if data == null:
+        return &"fire_light"
+    if data.id == JUICE_RAIL_LANCE:
+        return &"rail_lance"
+    if not data.is_continuous and data.heat_per_shot >= HEAVY_HEAT_THRESHOLD:
+        return &"fire_heavy"
+    return &"fire_light"
 
 
 func _apply_spread(direction: Vector3) -> Vector3:

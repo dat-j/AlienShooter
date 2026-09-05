@@ -78,7 +78,8 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-    _hit_timer = maxf(0.0, _hit_timer - delta)
+    # Thời gian thật: hitstop đóng băng thế giới, không đóng băng HUD (T-603).
+    _hit_timer = maxf(0.0, _hit_timer - JuiceDirector.get_unscaled_delta(delta))
     _position = get_viewport().get_mouse_position()
     var mount: WeaponMount = _leading_mount()
     _radius = ring_radius(_spread_of(mount))

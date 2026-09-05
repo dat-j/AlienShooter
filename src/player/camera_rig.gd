@@ -18,8 +18,11 @@ const MAX_AIM_OFFSET: float = 4.0
 @export var target_path: NodePath = NodePath("..")
 @export var distance: float = DEFAULT_DISTANCE
 
-## JuiceDirector (M6) ghi vào đây mỗi frame; giữ chỗ cho tới khi có T-601.
+## Offset rung ghi tay — dành cho hệ thống khác muốn đẩy camera mà không đi
+## qua JuiceDirector. Rung của JuiceDirector CỘNG THÊM vào đây, không đè lên.
 var shake_offset: Vector3 = Vector3.ZERO
+## Tắt khi muốn kiểm camera mà không có rung của JuiceDirector xen vào.
+@export var use_juice_shake: bool = true
 
 var _target: Node3D
 var _aim_point: Vector3 = Vector3.ZERO
@@ -62,7 +65,13 @@ func update_follow(delta: float) -> void:
         return
     var focus: Vector3 = compute_focus(_target.global_position, _aim_point)
     _follow_position = _follow_position.lerp(focus, clampf(FOLLOW_LERP * delta, 0.0, 1.0))
-    global_position = _follow_position + shake_offset
+    global_position = _follow_position + shake_offset + get_juice_offset()
+
+
+## Camera TỰ LẤY rung từ JuiceDirector; autoload không được giữ tham chiếu
+## tới node trong màn chơi (luật vàng TDD §4).
+func get_juice_offset() -> Vector3:
+    return JuiceDirector.get_shake_offset() if use_juice_shake else Vector3.ZERO
 
 
 func get_follow_position() -> Vector3:

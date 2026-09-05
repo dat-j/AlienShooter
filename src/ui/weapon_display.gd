@@ -43,7 +43,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-    _flash_phase += delta
+    # Nhịp nháy "hết đạn" đo bằng thời gian thật, không chậm theo hitstop.
+    _flash_phase += JuiceDirector.get_unscaled_delta(delta)
     if _mech == null:
         return
     _refresh(_mech.weapon_mount_left, MARKER_LEFT, _left_name, _left_ammo, _left_build_up)
