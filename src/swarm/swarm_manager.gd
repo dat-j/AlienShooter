@@ -41,6 +41,21 @@ var death_vfx_scene: PackedScene
 var _ray_hit_ids: PackedInt32Array = PackedInt32Array()
 var _ray_hit_distances: PackedFloat32Array = PackedFloat32Array()
 
+## Buffer dùng lại cho truy vấn — không bao giờ cấp phát trong đường nóng.
+var _query_ids: PackedInt32Array = PackedInt32Array()
+var _cone_candidates: PackedInt32Array = PackedInt32Array()
+
+## Lưới băm không gian của SwarmMovement. Không bắt buộc: khi để trống, mọi
+## truy vấn rơi về quét tuyến tính trên mảng liên tục (đúng nhưng O(n)).
+var _grid: SpatialHashGrid = null
+
+## Lưới do SwarmMovement đồng bộ mỗi frame, nên nó KHÔNG biết những đơn vị
+## vừa spawn/kill sau lần đồng bộ gần nhất. Truy vấn chiến đấu chỉ được tin
+## lưới khi hai số hiệu này bằng nhau; lệch thì quét tuyến tính cho chắc —
+## thà chậm còn hơn để một con vừa spawn miễn nhiễm với vụ nổ.
+var _state_revision: int = 0
+var _grid_synced_revision: int = -1
+
 
 func _init() -> void:
     _positions.resize(MAX_SWARM_UNITS)
@@ -57,6 +72,8 @@ func _init() -> void:
     _free_ids.resize(MAX_SWARM_UNITS)
     _ray_hit_ids.resize(MAX_SWARM_UNITS)
     _ray_hit_distances.resize(MAX_SWARM_UNITS)
+    _query_ids.resize(MAX_SWARM_UNITS)
+    _cone_candidates.resize(MAX_SWARM_UNITS)
     for id: int in range(MAX_SWARM_UNITS):
         _free_ids[id] = MAX_SWARM_UNITS - 1 - id
 
@@ -90,6 +107,7 @@ func spawn(
     _ids[index] = id
     _index_by_id[id] = index
     _alive_count += 1
+    _state_revision += 1
     return id
 
 
@@ -120,6 +138,7 @@ func kill(id: int) -> bool:
     _free_ids[_free_count] = id
     _free_count += 1
     _alive_count -= 1
+    _state_revision += 1
     return true
 
 
@@ -163,41 +182,197 @@ func damage_along_ray(
         return 0
     var segment: Vector3 = to - from
     segment.y = 0.0
+    if segment.length_squared() <= 0.000001:
+        return damage_at_point(from, hit_radius, damage)
+    var candidate_count: int = query_along_ray(from, to, hit_radius, _ray_hit_ids, _ray_hit_distances)
+    var limit: int = candidate_count if pierce < 0 else mini(candidate_count, pierce)
+    var hit_count: int = 0
+    for result_index: int in range(limit):
+        if damage_unit(_ray_hit_ids[result_index], damage) >= 0:
+            hit_count += 1
+    return hit_count
+
+
+## Trừ máu đúng MỘT đơn vị theo id logic, kill và phát VFX nếu nó chết.
+## Trả về 1 nếu chết, 0 nếu còn sống, -1 nếu id không tồn tại.
+func damage_unit(id: int, damage: float) -> int:
+    if id < 0 or id >= MAX_SWARM_UNITS or damage <= 0.0:
+        return -1
+    var index: int = _index_by_id[id]
+    if index < 0 or index >= _alive_count:
+        return -1
+    _healths[index] -= damage
+    if _healths[index] > 0.0:
+        return 0
+    var dead_position: Vector3 = _positions[index]
+    kill(id)
+    _spawn_death_vfx(dead_position)
+    return 1
+
+
+## KHÔNG cấp phát và KHÔNG gây sát thương: ghi id của mọi đơn vị nằm trong
+## `hit_radius` quanh đoạn `from`→`to` vào `out_ids`, kèm tham số vị trí dọc
+## đoạn (0..1) vào `out_ts`, đã **sắp xếp tăng dần theo khoảng cách tới
+## `from`**. Người gọi cấp phát trước hai buffer; hàm không bao giờ resize.
+## Trả về số phần tử đã ghi. Đoạn suy biến (dài 0) trả về 0.
+func query_along_ray(
+    from: Vector3,
+    to: Vector3,
+    hit_radius: float,
+    out_ids: PackedInt32Array,
+    out_ts: PackedFloat32Array
+) -> int:
+    if hit_radius < 0.0:
+        return 0
+    var segment: Vector3 = to - from
+    segment.y = 0.0
     var length_sq: float = segment.length_squared()
     if length_sq <= 0.000001:
-        return damage_at_point(from, hit_radius, damage)
-    var candidate_count: int = 0
+        return 0
+    var capacity: int = mini(out_ids.size(), out_ts.size())
     var radius_sq: float = hit_radius * hit_radius
+    var count: int = 0
     for index: int in range(_alive_count):
         var offset: Vector3 = _positions[index] - from
         offset.y = 0.0
         var t: float = clampf(offset.dot(segment) / length_sq, 0.0, 1.0)
-        var closest: Vector3 = from + segment * t
-        var distance: Vector3 = _positions[index] - closest
-        distance.y = 0.0
-        if distance.length_squared() <= radius_sq:
-            var insert_at: int = candidate_count
-            while insert_at > 0 and _ray_hit_distances[insert_at - 1] > t:
-                _ray_hit_distances[insert_at] = _ray_hit_distances[insert_at - 1]
-                _ray_hit_ids[insert_at] = _ray_hit_ids[insert_at - 1]
-                insert_at -= 1
-            _ray_hit_distances[insert_at] = t
-            _ray_hit_ids[insert_at] = _ids[index]
-            candidate_count += 1
-    var limit: int = candidate_count if pierce < 0 else mini(candidate_count, pierce)
-    var hit_count: int = 0
-    for result_index: int in range(limit):
-        var id: int = _ray_hit_ids[result_index]
+        var to_axis: Vector3 = offset - segment * t
+        to_axis.y = 0.0
+        if to_axis.length_squared() > radius_sq or count >= capacity:
+            continue
+        var insert_at: int = count
+        while insert_at > 0 and out_ts[insert_at - 1] > t:
+            out_ts[insert_at] = out_ts[insert_at - 1]
+            out_ids[insert_at] = out_ids[insert_at - 1]
+            insert_at -= 1
+        out_ts[insert_at] = t
+        out_ids[insert_at] = _ids[index]
+        count += 1
+    return count
+
+
+## KHÔNG cấp phát và KHÔNG gây sát thương: ghi id của mọi đơn vị trong bán
+## kính `radius` quanh `centre` (chiếu xuống XZ) vào `out_ids`. Dùng lưới băm
+## khi có, ngược lại quét tuyến tính. Trả về số phần tử đã ghi.
+func query_radius(centre: Vector3, radius: float, out_ids: PackedInt32Array) -> int:
+    if radius < 0.0:
+        return 0
+    var radius_sq: float = radius * radius
+    var capacity: int = out_ids.size()
+    var count: int = 0
+    if is_grid_fresh():
+        var found: int = mini(_grid.query_radius(centre, radius, _query_ids), _query_ids.size())
+        for slot: int in range(found):
+            if count >= capacity:
+                break
+            var id: int = _query_ids[slot]
+            if id < 0 or id >= MAX_SWARM_UNITS:
+                continue
+            var index: int = _index_by_id[id]
+            if index < 0 or index >= _alive_count:
+                continue
+            # Lưới có thể trễ một frame so với mảng vị trí — lọc lại cho chắc.
+            var grid_offset: Vector3 = _positions[index] - centre
+            grid_offset.y = 0.0
+            if grid_offset.length_squared() > radius_sq:
+                continue
+            out_ids[count] = id
+            count += 1
+        return count
+    for index: int in range(_alive_count):
+        if count >= capacity:
+            break
+        var offset: Vector3 = _positions[index] - centre
+        offset.y = 0.0
+        if offset.length_squared() > radius_sq:
+            continue
+        out_ids[count] = _ids[index]
+        count += 1
+    return count
+
+
+## KHÔNG cấp phát và KHÔNG gây sát thương: ghi id của mọi đơn vị nằm trong
+## hình nón đỉnh `apex`, trục `direction`, dài `cone_range`, góc mở tổng
+## `angle_degrees`. Sắp theo thứ tự tăng dần khoảng cách tới đỉnh nón.
+func query_in_cone(
+    apex: Vector3,
+    direction: Vector3,
+    cone_range: float,
+    angle_degrees: float,
+    out_ids: PackedInt32Array
+) -> int:
+    var axis := Vector3(direction.x, 0.0, direction.z)
+    if cone_range <= 0.0 or axis.length_squared() <= 0.000001:
+        return 0
+    axis = axis.normalized()
+    var cos_limit: float = cos(deg_to_rad(clampf(angle_degrees, 0.0, 360.0)) * 0.5)
+    var candidate_count: int = query_radius(apex, cone_range, _cone_candidates)
+    var capacity: int = out_ids.size()
+    var count: int = 0
+    for slot: int in range(candidate_count):
+        if count >= capacity:
+            break
+        var id: int = _cone_candidates[slot]
         var index: int = _index_by_id[id]
         if index < 0:
             continue
-        _healths[index] -= damage
-        hit_count += 1
-        if _healths[index] <= 0.0:
-            var dead_position: Vector3 = _positions[index]
-            kill(id)
-            _spawn_death_vfx(dead_position)
-    return hit_count
+        var offset: Vector3 = _positions[index] - apex
+        offset.y = 0.0
+        var distance: float = offset.length()
+        if distance > 0.0001 and offset.dot(axis) / distance < cos_limit:
+            continue
+        var insert_at: int = count
+        while insert_at > 0 and _distance_to(out_ids[insert_at - 1], apex) > distance:
+            out_ids[insert_at] = out_ids[insert_at - 1]
+            insert_at -= 1
+        out_ids[insert_at] = id
+        count += 1
+    return count
+
+
+## Vị trí hiện tại của đơn vị `id`, hoặc `Vector3.INF` nếu nó không còn sống.
+func get_unit_position(id: int) -> Vector3:
+    if id < 0 or id >= MAX_SWARM_UNITS:
+        return Vector3.INF
+    var index: int = _index_by_id[id]
+    if index < 0 or index >= _alive_count:
+        return Vector3.INF
+    return _positions[index]
+
+
+func is_alive(id: int) -> bool:
+    return id >= 0 and id < MAX_SWARM_UNITS and _index_by_id[id] >= 0
+
+
+## Lưới băm dùng chung với SwarmMovement. SwarmRuntime nối vào sau khi tạo
+## movement; để trống thì mọi truy vấn rơi về quét tuyến tính.
+func set_spatial_grid(grid: SpatialHashGrid) -> void:
+    _grid = grid
+
+
+func get_spatial_grid() -> SpatialHashGrid:
+    return _grid
+
+
+## SwarmMovement gọi sau khi đã đối chiếu xong lưới với mảng vị trí.
+func notify_grid_synced() -> void:
+    _grid_synced_revision = _state_revision
+
+
+## Lưới có phản ánh đúng tập đơn vị đang sống hay không. Vị trí có thể lệch
+## trong phạm vi một frame — `query_radius` lọc lại bằng `_positions` nên
+## sai lệch đó không lọt ra ngoài.
+func is_grid_fresh() -> bool:
+    return _grid != null and _grid_synced_revision == _state_revision
+
+
+func _distance_to(id: int, origin: Vector3) -> float:
+    var index: int = _index_by_id[id]
+    if index < 0:
+        return INF
+    var offset: Vector3 = _positions[index] - origin
+    offset.y = 0.0
+    return offset.length()
 
 
 func _spawn_death_vfx(position: Vector3) -> void:

@@ -18,12 +18,20 @@ const SWARM_HIT_RADIUS: float = 0.7
 ## SwarmManager của nhiệm vụ; để trống thì đạn chỉ đánh actor và tường.
 var swarm_manager: SwarmManager = null
 
+## Dùng chung cho mọi viên đạn: một vụ nổ chỉ tồn tại trong đúng một lần gọi,
+## nên 600 viên trong pool không cần 600 bộ buffer riêng.
+static var _shared_aoe: Aoe = Aoe.new()
+static var _probe_ids: PackedInt32Array = PackedInt32Array()
+static var _probe_ts: PackedFloat32Array = PackedFloat32Array()
+
 var _velocity: Vector3 = Vector3.ZERO
 var _damage: float = 0.0
 var _damage_type: DamageTypes.Type = DamageTypes.Type.KINETIC
 var _source: Node = null
 var _pierce_remaining: int = 0
 var _aoe_radius: float = 0.0
+var _self_damage_radius: float = 0.0
+var _self_target: Node = null
 var _lifetime: float = 0.0
 var _is_flying: bool = false
 var _hit_ids: Dictionary = {}
@@ -33,6 +41,9 @@ var _ray_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
 
 
 func _ready() -> void:
+    if _probe_ids.size() < SwarmManager.MAX_SWARM_UNITS:
+        _probe_ids.resize(SwarmManager.MAX_SWARM_UNITS)
+        _probe_ts.resize(SwarmManager.MAX_SWARM_UNITS)
     _ray_query.collide_with_areas = true
     _ray_query.collide_with_bodies = true
     _ray_query.collision_mask = HIT_MASK
@@ -79,10 +90,25 @@ func launch(
     visible = true
 
 
-## Số mục tiêu xuyên thêm và bán kính nổ, lấy từ `WeaponData` (T-508).
-func configure(pierce_count: int, aoe_radius: float) -> void:
+## Số mục tiêu xuyên thêm, bán kính nổ và bán kính tự sát thương, lấy từ
+## `WeaponData`. `self_target` là chủ vũ khí — kẻ duy nhất có thể tự dính đòn
+## nổ của chính mình (GDD §6.1).
+func configure(
+    pierce_count: int,
+    aoe_radius: float,
+    self_damage_radius: float = 0.0,
+    self_target: Node = null
+) -> void:
     _pierce_remaining = pierce_count
     _aoe_radius = maxf(aoe_radius, 0.0)
+    _self_damage_radius = maxf(self_damage_radius, 0.0)
+    _self_target = self_target
+
+
+## Đạn nổ không gây sát thương trực tiếp: toàn bộ sát thương của nó nằm ở vụ
+## nổ. Nếu cộng cả hai thì Frag Launcher gây gấp đôi bảng GDD §6.2.
+func is_explosive() -> bool:
+    return _aoe_radius > 0.0
 
 
 func is_flying() -> bool:
@@ -107,6 +133,8 @@ func _reset() -> void:
     _damage = 0.0
     _pierce_remaining = 0
     _aoe_radius = 0.0
+    _self_damage_radius = 0.0
+    _self_target = null
     _lifetime = 0.0
     _hit_ids.clear()
     _source = null
@@ -114,7 +142,11 @@ func _reset() -> void:
 
 ## Quét swarm bằng spatial data của SwarmManager, không qua physics.
 func _sweep_swarm(from: Vector3, to: Vector3) -> bool:
-    if swarm_manager == null or _damage <= 0.0:
+    if swarm_manager == null:
+        return false
+    if is_explosive():
+        return _sweep_swarm_proximity(from, to)
+    if _damage <= 0.0:
         return false
     var killed: int = swarm_manager.damage_along_ray(
         from, to, _damage, _pierce_remaining if _pierce_remaining > 0 else 1, SWARM_HIT_RADIUS
@@ -127,6 +159,16 @@ func _sweep_swarm(from: Vector3, to: Vector3) -> bool:
         _finish(true)
         return true
     return false
+
+
+## Đạn nổ chỉ cần biết CÓ chạm ai không, rồi kích nổ tại đúng chỗ chạm.
+func _sweep_swarm_proximity(from: Vector3, to: Vector3) -> bool:
+    var found: int = swarm_manager.query_along_ray(from, to, SWARM_HIT_RADIUS, _probe_ids, _probe_ts)
+    if found <= 0:
+        return false
+    global_position = swarm_manager.get_unit_position(_probe_ids[0])
+    _finish(true)
+    return true
 
 
 func _sweep_bodies(from: Vector3, to: Vector3) -> bool:
@@ -148,6 +190,9 @@ func _sweep_bodies(from: Vector3, to: Vector3) -> bool:
     var receiver: Node = hurtbox.get_receiver()
     if receiver == null or receiver == _source or _hit_ids.has(receiver.get_instance_id()):
         return false
+    if is_explosive():
+        _finish(true)
+        return true
     _hit_ids[receiver.get_instance_id()] = true
     _deal_damage(receiver)
     hit_target.emit(global_position, receiver)
@@ -169,12 +214,24 @@ func _deal_damage(receiver: Node) -> void:
     PoolManager.release_damage_info(info)
 
 
-## Nổ vùng khi có bán kính; suy giảm theo khoảng cách và tự sát thương là
-## việc của T-507 (`src/combat/aoe.gd`).
+## Nổ vùng: suy giảm theo khoảng cách, chặn bởi tường, và có thể làm chính
+## người bắn dính đòn — toàn bộ luật nằm trong `Aoe` (T-507).
 func _explode() -> void:
-    if _aoe_radius <= 0.0 or swarm_manager == null:
+    if not is_explosive():
         return
-    swarm_manager.damage_at_point(global_position, _aoe_radius, _damage)
+    var world: World3D = get_world_3d()
+    var space: PhysicsDirectSpaceState3D = world.direct_space_state if world != null else null
+    _shared_aoe.detonate(
+        space,
+        global_position,
+        _aoe_radius,
+        _damage,
+        _damage_type,
+        _source,
+        swarm_manager,
+        _self_damage_radius,
+        _self_target
+    )
 
 
 func _finish(did_hit: bool) -> void:

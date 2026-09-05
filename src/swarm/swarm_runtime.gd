@@ -35,6 +35,9 @@ var _target: Node3D
 func _ready() -> void:
     _target = get_node_or_null(target_path) as Node3D
     manager.set_batch_count(batch_count)
+    # Hitscan/AoE truy vấn swarm qua manager; cho nó mượn lưới của movement
+    # để không phải quét tuyến tính 400 phần tử mỗi lần nổ (T-505, T-507).
+    manager.set_spatial_grid(_movement.get_grid())
     var half: float = arena_size * 0.5
     _flow.configure(AABB(Vector3(-half, -1.0, -half), Vector3(arena_size, 2.0, arena_size)), cell_size)
     bake_costs_from_world()

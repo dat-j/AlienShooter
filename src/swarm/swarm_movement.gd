@@ -133,6 +133,8 @@ func _sync_grid(manager: SwarmManager) -> void:
         if _tracked[id] != 0 and _alive_ids[id] == 0:
             _grid.remove(id)
             _tracked[id] = 0
+    # Từ đây tới lần spawn/kill kế tiếp, truy vấn chiến đấu được phép tin lưới.
+    manager.notify_grid_synced()
 
 
 func _separation(manager: SwarmManager, position: Vector3, self_id: int) -> Vector3:

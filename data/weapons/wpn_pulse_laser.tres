@@ -1,34 +1,31 @@
-[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://src/resources/weapon_data.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/projectiles/projectile_basic.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
-id = &"wpn_mk2_autocannon"
-display_name_key = "weapon.wpn_mk2_autocannon.name"
-category = 0
+id = &"wpn_pulse_laser"
+display_name_key = "weapon.wpn_pulse_laser.name"
+category = 1
 tier = 1
-damage = 8.0
-damage_type = 0
+damage = 14.0
+damage_type = 1
 projectiles_per_shot = 1
-spread_degrees = 1.5
-pierce_count = 0
+spread_degrees = 0.0
+pierce_count = 1
 aoe_radius = 0.0
 self_damage_radius = 0.0
 status_to_apply = Array[StringName]([])
-rate_of_fire = 8.0
-heat_per_shot = 2.2
+rate_of_fire = 3.0
+heat_per_shot = 9.0
 charge_time = 0.0
 spin_up_time = 0.0
-max_range = 0.0
+max_range = 60.0
 is_continuous = false
 tick_rate = 10.0
 cone_angle_degrees = 0.0
 max_targets_per_tick = 0
-uses_ammo = true
-max_ammo = 360
-projectile_scene = ExtResource("2")
-projectile_speed = 60.0
+uses_ammo = false
+max_ammo = 0
 upgrade_costs = Array[Vector2i]([Vector2i(400, 8), Vector2i(900, 20), Vector2i(1800, 45), Vector2i(3500, 90)])
 overdrive_effect = &""
